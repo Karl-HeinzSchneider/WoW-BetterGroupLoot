@@ -63,6 +63,12 @@ function frame:Update()
     -- preview:SetScale(state.scale)
     preview:SetScale(1)
 
+    if state.showPreview then
+        preview.FakePreview:Show();
+    else
+        preview.FakePreview:Hide();
+    end
+
     local f = _G['GroupLootContainer']
     f.ignoreFramePositionManager = true;
     f:ClearAllPoints()
@@ -115,12 +121,12 @@ function frame:ChangeGroupLootContainer()
     fakeRoll:SetSize(256, 100)
     self.PreviewRoll = fakeRoll
 
-    -- local fakePreview = CreateFrame('Frame', 'DragonflightUIEditModeGroupLootContainerFakeLootPreview', fakeRoll,
-    --                                 'DFEditModePreviewGroupLootTemplate')
-    -- fakePreview:SetPoint('CENTER')
-    -- self:UpdateGroupLootFrameStyleSimple(fakePreview)
+    local fakePreview = CreateFrame('Frame', 'BetterGroupLootContainerPreviewFakeLoot', fakeRoll,
+                                    'BetterGroupLootPreviewTemplate')
+    fakePreview:SetPoint('CENTER')
+    self:UpdateGroupLootFrameStyleSimple(fakePreview)
 
-    -- fakeRoll.FakePreview = fakePreview
+    fakeRoll.FakePreview = fakePreview
 
     for i = 1, 4 do
         local f = _G['GroupLootFrame' .. i]
