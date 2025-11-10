@@ -11,6 +11,7 @@ if not lib then
 end
 
 local defaults = {
+    showPreview = false,
     scale = 1,
     anchorFrame = 'UIParent',
     customAnchorFrame = '',
