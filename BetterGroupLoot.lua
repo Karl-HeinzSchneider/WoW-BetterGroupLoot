@@ -137,10 +137,6 @@ function frame:ChangeGroupLootContainer()
 end
 
 function frame:AddEventFunctions()
-    -- local events = {
-    --     'PLAYER_ENTERING_WORLD', 'START_LOOT_ROLL', 'LOOT_HISTORY_ROLL_CHANGED', 'LOOT_HISTORY_ROLL_COMPLETE',
-    --     'LOOT_ROLLS_COMPLETE'
-    -- }
 
     local function UpdateFunc()
         for i = 1, 4 do
