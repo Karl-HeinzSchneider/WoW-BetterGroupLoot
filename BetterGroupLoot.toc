@@ -4,7 +4,7 @@
 ## Notes: Simple addon improve the GroupLootFrame.|n|cffbbbbbbBy Karl-Heinz Schneider|r|n|n|TInterface/Addons/BetterGroupLoot/coffee:12:12|t |cff82c5ffbuymeacoffee.com/karlheinzschneider|r
 ## Author: Karl-Heinz Schneider
 ## X-Website: https://github.com/Karl-HeinzSchneider/WoW-BetterGroupLoot
-## X-Curse-Project-ID: 
+## X-Curse-Project-ID: 1382269
 ## Version: @project-version@
 ## X-Date: @project-date-integer@
 ## SavedVariables: BetterGroupLootDB
