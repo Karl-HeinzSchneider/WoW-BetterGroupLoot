@@ -1,4 +1,5 @@
-## Interface:  11508
+## Interface:  50502, 11508
+## Interface-Mists: 50502
 ## Interface-Classic: 11508
 ## Title: BetterGroupLoot |cff8080ff@project-version@|r
 ## Notes: Simple addon improve the GroupLootFrame.|n|cffbbbbbbBy Karl-Heinz Schneider|r|n|n|TInterface/Addons/BetterGroupLoot/coffee:12:12|t |cff82c5ffbuymeacoffee.com/karlheinzschneider|r
