@@ -1,10 +1,27 @@
 # BetterGroupLoot – Repo Overview (temporary, delete after rework)
 
+## Rework status (Forever rewrite)
+
+- **Done**:
+  - The repo is set up from `WoW-AddonTemplate`. The addon lives in `BetterGroupLoot/`, uses Ace3 and has no minimap button.
+  - The old Classic code (the sections below) is removed from the tree; it's still in the git history.
+  - Own roll frames (`src/rolls/`), with all loot API calls behind `app.api` (`src/api/api.lua` for the contract, `src/api/forever.lua` for Forever).
+- **To verify in game**:
+  - Rolls show and clicking a button rolls.
+  - Blizzard's frames stay hidden.
+  - A roll gets paired with its loot history drop (`/bettergrouploot loglevel debug` prints "Roll N is loot history drop E:K").
+  - Counts update as players choose.
+  - The Need roll's number appears on the frame.
+  - Trash rolls: do they get history entries?
+  - Unlock, drag and the sliders.
+- The sections below describe the **old** Classic addon and the Forever research that led to the rewrite.
+
 ## What it does
 
 A small addon that **restyles and extends Blizzard's default GroupLootFrame** (the Need/Greed/Pass roll popup). It does not replace the frame; it modifies `GroupLootFrame1..4` and `GroupLootContainer` in place.
 
 Features:
+
 - New compact style: 38px masked item icon with a quality-colored border overlay, smaller (28px) roll buttons laid out as `[Need][Pass]` on top and `[Greed]` under Need. The corner art is hidden.
 - **Roll counts** drawn on each button (how many players picked Need / Greed / Pass).
 - **Tooltip per button** lists which players chose that option (class-colored), plus an "Undecided" list.
@@ -16,18 +33,18 @@ The code was taken from DragonflightUI Classic (hence the `DF*` field names).
 
 ## Files
 
-| File | Role |
-|---|---|
-| `BetterGroupLoot.toc` | Interface `50502` (MoP Classic) and `11508` (Classic Era). Loads only `BetterGroupLoot_standalone.xml`. SavedVariables `BetterGroupLootDB`. `@project-version@` tokens are filled in by the BigWigs packager. |
-| `BetterGroupLoot_standalone.xml` | Load order: LibStub → CallbackHandler → `Preview.xml` → `BetterGroupLoot.lua` → `Options.lua`. |
-| `BetterGroupLoot.lua` | Core. Registers the library `BetterGroupLoot-1.0` through LibStub, handles events, styles the frames, counts rolls, builds tooltips. |
-| `Preview.xml` | Virtual template `BetterGroupLootPreviewTemplate`: a hand-copied version of the old Classic GroupLootFrame XML (backdrop, `$parentSlotTexture`, `$parentCorner`, `$parentDecoration`, IconFrame, Need/Pass/Greed buttons, Timer status bar). |
-| `Preview.mixin.lua` | Mixin for the preview: cycles random items every 42s, fakes the timer bar and counts. **Duplicates** the color/overlay helpers from `BetterGroupLoot.lua` on its own local frame. |
-| `Options.lua` | Settings category "BetterGroupLoot" (checkbox plus 2 proxy sliders from -3000 to 3000). Runs only when standalone. Hooked onto `frame.PLAYER_LOGIN` via `hooksecurefunc`. |
-| `Libs/` | LibStub and CallbackHandler-1.0 (CallbackHandler is loaded but **not used**). |
-| `Textures/` | `maskNew.blp` (icon mask), `whiteiconframeEdit.blp` (white border, tinted by quality). |
-| `.github/workflows/` | BigWigs packager: a tag push creates a release, a `*-preview` branch push creates an alpha build. CurseForge project ID 1382269. |
-| `.vscode/settings.json` | LuaLS globals list and Ketho WoW API annotations. |
+| File                             | Role                                                                                                                                                                                                                                         |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BetterGroupLoot.toc`            | Interface `50502` (MoP Classic) and `11508` (Classic Era). Loads only `BetterGroupLoot_standalone.xml`. SavedVariables `BetterGroupLootDB`. `@project-version@` tokens are filled in by the BigWigs packager.                                |
+| `BetterGroupLoot_standalone.xml` | Load order: LibStub → CallbackHandler → `Preview.xml` → `BetterGroupLoot.lua` → `Options.lua`.                                                                                                                                               |
+| `BetterGroupLoot.lua`            | Core. Registers the library `BetterGroupLoot-1.0` through LibStub, handles events, styles the frames, counts rolls, builds tooltips.                                                                                                         |
+| `Preview.xml`                    | Virtual template `BetterGroupLootPreviewTemplate`: a hand-copied version of the old Classic GroupLootFrame XML (backdrop, `$parentSlotTexture`, `$parentCorner`, `$parentDecoration`, IconFrame, Need/Pass/Greed buttons, Timer status bar). |
+| `Preview.mixin.lua`              | Mixin for the preview: cycles random items every 42s, fakes the timer bar and counts. **Duplicates** the color/overlay helpers from `BetterGroupLoot.lua` on its own local frame.                                                            |
+| `Options.lua`                    | Settings category "BetterGroupLoot" (checkbox plus 2 proxy sliders from -3000 to 3000). Runs only when standalone. Hooked onto `frame.PLAYER_LOGIN` via `hooksecurefunc`.                                                                    |
+| `Libs/`                          | LibStub and CallbackHandler-1.0 (CallbackHandler is loaded but **not used**).                                                                                                                                                                |
+| `Textures/`                      | `maskNew.blp` (icon mask), `whiteiconframeEdit.blp` (white border, tinted by quality).                                                                                                                                                       |
+| `.github/workflows/`             | BigWigs packager: a tag push creates a release, a `*-preview` branch push creates an alpha build. CurseForge project ID 1382269.                                                                                                             |
+| `.vscode/settings.json`          | LuaLS globals list and Ketho WoW API annotations.                                                                                                                                                                                            |
 
 ## Runtime flow
 
@@ -55,10 +72,12 @@ The code was taken from DragonflightUI Classic (hence the `DF*` field names).
 5. **Button `OnEnter`**: builds the tooltip, then calls `AddTooltipLines(btn, rollType)`, which rebuilds the same tables and lists the names.
 
 ### Saved variables (`BetterGroupLootDB`)
+
 - Used: `showPreview`, `anchor`, `anchorParent`, `x` (425), `y` (200).
 - Defined but unused: `scale`, `anchorFrame`, `customAnchorFrame`.
 
 ### Embedding API (partial)
+
 - `LibStub('BetterGroupLoot-1.0')`, then `lib.frame:SetState(tbl)`.
 - Also exposes `lib.Defaults`, `lib.IsStandalone` and `lib.BetterGroupLootDB`.
 
@@ -100,6 +119,7 @@ Source: the Blizzard UI export at `../_data/BlizzardInterfaceCode/Interface/AddO
 ### GroupLootFrame (source: `Blizzard_UIPanels_Game/Mainline/GroupLootFrame.xml` and `.lua`)
 
 **Templates**
+
 - `GroupLootFrameBaseTemplate`:
   - Inherits `DefaultDialogPanelTemplate`, size **277x67**.
   - Regions:
@@ -113,12 +133,12 @@ Source: the Blizzard UI export at `../_data/BlizzardInterfaceCode/Interface/AddO
   - Inherits the base template. Parent is UIParent, `toplevel`, strata `DIALOG`.
   - Adds `LootButtonContainer`, anchored between `Name` and the right edge. It holds 4 buttons from `LootRollButtonTemplate` (32x32, `parentArray="LootButtons"`):
 
-| Button | `id` (= RollOnLoot type) | Anchor | Atlas |
-|---|---|---|---|
-| `NeedButton` | 1 | TOPLEFT of container +14,-7 | `lootroll-toast-icon-need-{up,highlight,down}` |
-| `PassButton` | 0 | RIGHT of Need +6,+2 | `lootroll-toast-icon-pass-*` |
-| `GreedButton` | 2 | BOTTOM of Need, 0,+5 | `lootroll-toast-icon-greed-*` |
-| `TransmogButton` | 4 | CENTER on Greed (same spot) | `lootroll-toast-icon-transmog-*` |
+| Button           | `id` (= RollOnLoot type) | Anchor                      | Atlas                                          |
+| ---------------- | ------------------------ | --------------------------- | ---------------------------------------------- |
+| `NeedButton`     | 1                        | TOPLEFT of container +14,-7 | `lootroll-toast-icon-need-{up,highlight,down}` |
+| `PassButton`     | 0                        | RIGHT of Need +6,+2         | `lootroll-toast-icon-pass-*`                   |
+| `GreedButton`    | 2                        | BOTTOM of Need, 0,+5        | `lootroll-toast-icon-greed-*`                  |
+| `TransmogButton` | 4                        | CENTER on Greed (same spot) | `lootroll-toast-icon-transmog-*`               |
 
 - `LootRollButtonTemplate`:
   - `OnClick`: `RollOnLoot(self:GetParent():GetParent().rollID, self:GetID())`. The button's parent is the container, and the container's parent is the frame.
@@ -129,6 +149,7 @@ Source: the Blizzard UI export at `../_data/BlizzardInterfaceCode/Interface/AddO
 - There is **no Disenchant button**. `LootRollType` is Pass=0, Need=1, Greed=2, Disenchant=3, Transmog=4.
 
 **Logic (`GroupLootFrame.lua`)**
+
 - Opening a roll:
   - `START_LOOT_ROLL` → `GameEvent.HandleStartLootRoll` (`Blizzard_Game/Mainline/EventImplementation.lua:386`) → `GroupLootContainer_AddRoll(rollID, rollTime)`.
   - This is skipped entirely when the gamepad UI is enabled (see below).
@@ -151,6 +172,7 @@ Source: the Blizzard UI export at `../_data/BlizzardInterfaceCode/Interface/AddO
 - The IconFrame tooltip is `GroupLootFrameIconFrame_OnEnter` → `GameTooltip:SetLootRollItem(rollID)`.
 
 **Container and positioning**
+
 - `GroupLootContainer`:
   - A `ContainedAlertFrame`, inherits **`BottomManagedFrameTemplate`**, size 256x1, `layoutIndex=3`. It is also registered as an external AlertFrame subsystem, so alerts stack above it.
   - `GroupLootContainer_Update` places frames at `CENTER` of container `BOTTOM`, with y = `reservedSize(100) * (i - 0.5)`. It sets the container height to `100 * lastIdx`, then calls `self.layoutParent:Layout()`.
@@ -162,12 +184,14 @@ Source: the Blizzard UI export at `../_data/BlizzardInterfaceCode/Interface/AddO
   - It must be set before the first show. If the container was already managed (reparented), it has to be reparented back to UIParent.
 
 **Gamepad mode**
+
 - When `InputUtil.IsGamepadUIEnabled()`, rolls go to a different frame, `GamepadGroupLootRollFrame`: a scroll list of `GamepadGroupLootRollFrameTemplate` cards with different button anchors.
 - `GroupLootFrame1..4` are not used then. Scope decision: ignore gamepad mode, or support it later.
 
 ### C_LootHistory (source: `Blizzard_APIDocumentationGenerated/LootHistoryDocumentation.lua`)
 
 **Functions**
+
 - `GetAllEncounterInfos()` returns `EncounterLootInfo[]`, each `{encounterName, encounterID, startTime, duration}`.
 - `GetInfoForEncounter(encounterID)` returns `EncounterLootInfo?`.
 - `GetSortedDropsForEncounter(encounterID)` returns `EncounterLootDropInfo[]?`.
@@ -176,6 +200,7 @@ Source: the Blizzard UI export at `../_data/BlizzardInterfaceCode/Interface/AddO
 - The three encounter functions are flagged `SecretArguments = "AllowedWhenUntainted"`. They are fine with normal numbers we get from events or returns, but must not be passed "secret" values.
 
 **`EncounterLootDropInfo` fields**
+
 - `lootListKey`, `itemHyperlink`, `playerRollState`.
 - `currentLeader?`, `isTied`, `winner?`, `allPassed`.
 - `rollInfos[]`, each an `EncounterLootDropRollInfo`: `{playerName, playerGUID, playerClass, isSelf, state, isWinner, roll?}`.
@@ -183,18 +208,19 @@ Source: the Blizzard UI export at `../_data/BlizzardInterfaceCode/Interface/AddO
 
 **`Enum.EncounterLootDropRollState`**
 
-| Value | State |
-|---|---|
-| 0 | NeedMainSpec |
-| 1 | NeedOffSpec |
-| 2 | Transmog |
-| 3 | Greed |
-| 4 | NoRoll (= undecided) |
-| 5 | Pass |
+| Value | State                |
+| ----- | -------------------- |
+| 0     | NeedMainSpec         |
+| 1     | NeedOffSpec          |
+| 2     | Transmog             |
+| 3     | Greed                |
+| 4     | NoRoll (= undecided) |
+| 5     | Pass                 |
 
 The **numbers are not the same as the `RollOnLoot` types**, so we need a mapping.
 
 **Events**
+
 - `LOOT_HISTORY_UPDATE_DROP(encounterID, lootListKey)`: fires when someone rolls. This is the one we want.
 - `LOOT_HISTORY_UPDATE_ENCOUNTER(encounterID)`.
 - `LOOT_HISTORY_CLEAR_HISTORY`.
@@ -203,6 +229,7 @@ The **numbers are not the same as the `RollOnLoot` types**, so we need a mapping
 - The old `GetItem`, `GetPlayerInfo`, `LOOT_HISTORY_ROLL_CHANGED` and `LOOT_HISTORY_ROLL_COMPLETE` **do not exist**.
 
 **How Blizzard uses it** (`Blizzard_FrameXML/Mainline/LootHistory.lua`)
+
 - `LootHistoryElementMixin:SetTooltip` is a good reference for the tooltip:
   - It walks `dropInfo.rollInfos`.
   - It skips "multiple item instance win protection" rolls.
@@ -231,18 +258,18 @@ The **numbers are not the same as the `RollOnLoot` types**, so we need a mapping
 
 ### Impact on our code (summary)
 
-| Current code | Forever reality |
-|---|---|
-| `_G[name.."Corner"/"Decoration"/"SlotTexture"]` | nil, so the addon errors. Use parentKeys: `Background`, `Border`, `Name`, `IconFrame.*`, `Timer`. |
-| `f.NeedButton` / `f.GreedButton` / `f.PassButton` | `f.LootButtonContainer.NeedButton` and the others, plus `TransmogButton` (shares Greed's spot). |
-| File textures `UI-GroupLoot-*` plus texcoord hacks | Atlases `lootroll-toast-icon-*` are already set. Probably just resize and re-anchor. |
-| Our quality overlay and mask textures | Blizzard sets `IconFrame.Border` (atlas) and tints `Border` itself. The overlay can probably go. |
-| `C_LootHistory.GetItem` / `GetPlayerInfo` | Rewrite on `GetSortedDropsForEncounter` / `GetSortedInfoForDrop` plus the rollID matching. |
-| `LOOT_HISTORY_ROLL_CHANGED` / `_COMPLETE` | `LOOT_HISTORY_UPDATE_DROP` / `_UPDATE_ENCOUNTER`. |
-| Registering `START_LOOT_ROLL` ourselves | Use `HookScript("OnShow")` on the roll frames, or `hooksecurefunc("GroupLootFrame_SetupItemDisplay")`. |
-| `ignoreFramePositionManager` | Still valid with the Mainline managed frame system. |
-| Preview template (Classic XML copy) | Rebuild it from `MKBGroupLootFrameTemplate` with a fake `rollID`, or copy the base layout. The Classic item IDs are fine for Forever. |
-| Rolls read as 0/1/2/3 | Map the `EncounterLootDropRollState` values: Need = 0 or 1, Transmog = 2, Greed = 3, undecided = 4, Pass = 5. |
+| Current code                                       | Forever reality                                                                                                                       |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `_G[name.."Corner"/"Decoration"/"SlotTexture"]`    | nil, so the addon errors. Use parentKeys: `Background`, `Border`, `Name`, `IconFrame.*`, `Timer`.                                     |
+| `f.NeedButton` / `f.GreedButton` / `f.PassButton`  | `f.LootButtonContainer.NeedButton` and the others, plus `TransmogButton` (shares Greed's spot).                                       |
+| File textures `UI-GroupLoot-*` plus texcoord hacks | Atlases `lootroll-toast-icon-*` are already set. Probably just resize and re-anchor.                                                  |
+| Our quality overlay and mask textures              | Blizzard sets `IconFrame.Border` (atlas) and tints `Border` itself. The overlay can probably go.                                      |
+| `C_LootHistory.GetItem` / `GetPlayerInfo`          | Rewrite on `GetSortedDropsForEncounter` / `GetSortedInfoForDrop` plus the rollID matching.                                            |
+| `LOOT_HISTORY_ROLL_CHANGED` / `_COMPLETE`          | `LOOT_HISTORY_UPDATE_DROP` / `_UPDATE_ENCOUNTER`.                                                                                     |
+| Registering `START_LOOT_ROLL` ourselves            | Use `HookScript("OnShow")` on the roll frames, or `hooksecurefunc("GroupLootFrame_SetupItemDisplay")`.                                |
+| `ignoreFramePositionManager`                       | Still valid with the Mainline managed frame system.                                                                                   |
+| Preview template (Classic XML copy)                | Rebuild it from `MKBGroupLootFrameTemplate` with a fake `rollID`, or copy the base layout. The Classic item IDs are fine for Forever. |
+| Rolls read as 0/1/2/3                              | Map the `EncounterLootDropRollState` values: Need = 0 or 1, Transmog = 2, Greed = 3, undecided = 4, Pass = 5.                         |
 
 ## Existing bugs and smells found
 
