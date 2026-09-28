@@ -11,14 +11,14 @@ local profile = {
     -- Bottom center of the first roll frame, relative to the bottom center of the screen, in
     -- UIParent units: changing the scale keeps the rolls on that spot.
     position = {
-        x = 0,
-        y = 250,
+        x = 600,
+        y = 420,
     },
     scale = 1,
     -- New rolls stack above the first one (false: below it).
     growUp = true,
     -- Gap between two roll frames.
-    spacing = 4,
+    spacing = 8,
     -- The roll buttons' tooltips also list the players who haven't chosen yet.
     showUndecided = true,
 }
