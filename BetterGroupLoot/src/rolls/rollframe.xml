@@ -1,0 +1,172 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<!-- One roll choice (Need, Greed, Transmog, Pass) with the number of players who took it.
+	     `choice` names the button for the mixin, `rollType` is the api.RollType it rolls. -->
+	<Button name="BetterGroupLootRollButtonTemplate" mixin="BetterGroupLootRollButtonMixin" motionScriptsWhileDisabled="true" virtual="true">
+		<Size x="32" y="32" />
+		<Layers>
+			<Layer level="OVERLAY">
+				<FontString parentKey="Count" inherits="NumberFontNormal" justifyH="RIGHT">
+					<Anchors>
+						<Anchor point="BOTTOMRIGHT" x="3" y="-2" />
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnClick method="OnClick" />
+			<OnEnter method="OnEnter" />
+			<OnLeave method="OnLeave" />
+		</Scripts>
+	</Button>
+
+	<!-- One roll: item, timer and the roll buttons. Built on the game's loot toast art. -->
+	<Frame name="BetterGroupLootRollFrameTemplate" mixin="BetterGroupLootRollFrameMixin" hidden="true" virtual="true">
+		<Size x="277" y="67" />
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture parentKey="Background" file="Interface\LootFrame\LootToast" setAllPoints="true">
+					<TexCoords left="0.28222656" right="0.55273438" top="0.30859375" bottom="0.57031250" />
+				</Texture>
+			</Layer>
+			<Layer level="BORDER">
+				<!-- Tinted in the item's quality color. -->
+				<Texture parentKey="Border" file="Interface\LootFrame\LootToast">
+					<Size x="286" y="76" />
+					<Anchors>
+						<Anchor point="CENTER" />
+					</Anchors>
+					<TexCoords left="0.00097656" right="0.28027344" top="0.43750000" bottom="0.73437500" />
+				</Texture>
+			</Layer>
+			<Layer level="ARTWORK">
+				<FontString parentKey="Name" inherits="GameFontNormal" justifyH="LEFT" justifyV="MIDDLE">
+					<Size x="125" y="30" />
+					<Anchors>
+						<Anchor point="TOPLEFT" x="60" y="-15" />
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Button parentKey="IconFrame">
+				<Size x="34" y="34" />
+				<Anchors>
+					<Anchor point="TOPLEFT" x="10" y="-11" />
+				</Anchors>
+				<Layers>
+					<Layer level="ARTWORK">
+						<Texture parentKey="Icon" setAllPoints="true" />
+					</Layer>
+					<Layer level="OVERLAY">
+						<FontString parentKey="Count" inherits="NumberFontNormal" justifyH="RIGHT" hidden="true">
+							<Anchors>
+								<Anchor point="BOTTOMRIGHT" x="-5" y="0" />
+							</Anchors>
+						</FontString>
+						<Texture parentKey="IconBorder" atlas="loottoast-itemborder-green">
+							<Size x="42" y="42" />
+							<Anchors>
+								<Anchor point="CENTER" x="0" y="-2" />
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnEnter>
+						self:GetParent():OnIconEnter(self);
+					</OnEnter>
+					<OnLeave>
+						GameTooltip:Hide();
+					</OnLeave>
+					<OnClick>
+						self:GetParent():OnIconClick();
+					</OnClick>
+				</Scripts>
+			</Button>
+
+			<Button parentKey="NeedButton" inherits="BetterGroupLootRollButtonTemplate">
+				<KeyValues>
+					<KeyValue key="choice" value="need" type="string" />
+					<KeyValue key="rollType" value="1" type="number" />
+				</KeyValues>
+				<Anchors>
+					<Anchor point="TOPLEFT" x="202" y="-7" />
+				</Anchors>
+				<NormalTexture atlas="lootroll-toast-icon-need-up" />
+				<HighlightTexture atlas="lootroll-toast-icon-need-highlight" alphaMode="ADD" />
+				<PushedTexture atlas="lootroll-toast-icon-need-down" />
+			</Button>
+			<Button parentKey="PassButton" inherits="BetterGroupLootRollButtonTemplate">
+				<KeyValues>
+					<KeyValue key="choice" value="pass" type="string" />
+					<KeyValue key="rollType" value="0" type="number" />
+				</KeyValues>
+				<Anchors>
+					<Anchor point="LEFT" relativeKey="$parent.NeedButton" relativePoint="RIGHT" x="6" y="2" />
+				</Anchors>
+				<NormalTexture atlas="lootroll-toast-icon-pass-up" />
+				<HighlightTexture atlas="lootroll-toast-icon-pass-highlight" alphaMode="ADD" />
+				<PushedTexture atlas="lootroll-toast-icon-pass-down" />
+			</Button>
+			<Button parentKey="GreedButton" inherits="BetterGroupLootRollButtonTemplate">
+				<KeyValues>
+					<KeyValue key="choice" value="greed" type="string" />
+					<KeyValue key="rollType" value="2" type="number" />
+				</KeyValues>
+				<Anchors>
+					<Anchor point="TOP" relativeKey="$parent.NeedButton" relativePoint="BOTTOM" x="0" y="5" />
+				</Anchors>
+				<NormalTexture atlas="lootroll-toast-icon-greed-up" />
+				<HighlightTexture atlas="lootroll-toast-icon-greed-highlight" alphaMode="ADD" />
+				<PushedTexture atlas="lootroll-toast-icon-greed-down" />
+			</Button>
+			<!-- Takes Greed's place when the item can be rolled for transmog. -->
+			<Button parentKey="TransmogButton" inherits="BetterGroupLootRollButtonTemplate" hidden="true">
+				<KeyValues>
+					<KeyValue key="choice" value="transmog" type="string" />
+					<KeyValue key="rollType" value="4" type="number" />
+				</KeyValues>
+				<Anchors>
+					<Anchor point="CENTER" relativeKey="$parent.GreedButton" relativePoint="CENTER" />
+				</Anchors>
+				<NormalTexture atlas="lootroll-toast-icon-transmog-up" />
+				<HighlightTexture atlas="lootroll-toast-icon-transmog-highlight" alphaMode="ADD" />
+				<PushedTexture atlas="lootroll-toast-icon-transmog-down" />
+			</Button>
+
+			<!-- Sits one frame level below the roll frame (set in the mixin), so the border overlaps it. -->
+			<StatusBar parentKey="Timer" drawLayer="ARTWORK" minValue="0" maxValue="60000" defaultValue="0">
+				<Size x="190" y="8" />
+				<Anchors>
+					<Anchor point="BOTTOMLEFT" x="3" y="2" />
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture parentKey="Background" setAllPoints="true">
+							<Color r="0" g="0" b="0" />
+						</Texture>
+					</Layer>
+				</Layers>
+				<BarTexture parentKey="Bar" file="Interface\PaperDollInfoFrame\UI-Character-Skills-Bar" />
+				<BarColor r="1.0" g="1.0" b="0" />
+			</StatusBar>
+
+			<!-- The own Need roll's result, shown in place of the buttons. -->
+			<Frame parentKey="RollResult" setAllPoints="true" hidden="true">
+				<Layers>
+					<Layer level="OVERLAY">
+						<FontString parentKey="Text" inherits="Game32Font">
+							<Anchors>
+								<Anchor point="CENTER" relativeKey="$parent.$parent.NeedButton" relativePoint="CENTER" x="19" y="-13" />
+							</Anchors>
+						</FontString>
+					</Layer>
+				</Layers>
+			</Frame>
+		</Frames>
+		<Scripts>
+			<OnLoad method="OnLoad" />
+			<OnUpdate method="OnUpdate" />
+		</Scripts>
+	</Frame>
+</Ui>

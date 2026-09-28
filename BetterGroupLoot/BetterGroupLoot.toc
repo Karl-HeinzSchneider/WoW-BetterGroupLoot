@@ -1,0 +1,26 @@
+## Interface: 16001
+## Title: BetterGroupLoot
+## Notes: Better group loot rolls: see how many players chose Need, Greed, Transmog or Pass, who they are, and move the rolls anywhere. |n|cffbbbbbbBy Karl-Heinz Schneider|r|n|n|TInterface/Addons/BetterGroupLoot/assets/core/coffee:12:12|t |cff82c5ffbuymeacoffee.com/karlheinzschneider|r
+## IconTexture: Interface\Icons\INV_Misc_Dice_02
+## Author: Karl-HeinzSchneider
+## Version: |cff8080ff@project-version@|r
+## SavedVariables: BetterGroupLootDB
+## X-License: MIT
+## X-Website: https://github.com/Karl-HeinzSchneider/WoW-BetterGroupLoot
+## X-Curse-Project-ID: 1382269
+
+embeds.xml
+
+src\core\logger.lua
+src\core\db.lua
+src\core\ace.lua
+src\core\options.lua
+
+src\api\api.lua
+src\api\forever.lua
+
+src\rolls\rollframe.lua
+src\rolls\rollframe.xml
+src\rolls\rolls.lua
+
+BetterGroupLoot.lua
