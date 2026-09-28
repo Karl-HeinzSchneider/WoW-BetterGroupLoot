@@ -66,7 +66,8 @@ may call the game's loot API directly.
 - `rollframe.lua` — `BetterGroupLootRollButtonMixin` (one choice: count, tooltip listing the
   players, click rolls) and `BetterGroupLootRollFrameMixin` (a roll: `SetRoll(rollID, duration)` for
   a real roll, `SetPreview(preview)` for a fake one, `UpdateChoices()`, `ShowNeedRoll()` for the own
-  instant Need roll's number, `Reset()` for the pool). Greed and Transmog count and list both.
+  instant Need roll's number, `Reset()` for the pool). Each button counts only its own choice;
+  the Greed and Transmog tooltips both list Transmog, then Greed (Transmog beats Greed).
 - `rollframe.xml` — `BetterGroupLootRollButtonTemplate` and `BetterGroupLootRollFrameTemplate`
   (277×67), our own templates on the game's loot toast art (`Interface\LootFrame\LootToast`) and
   the `lootroll-toast-icon-*` / `loottoast-itemborder-*` atlases.

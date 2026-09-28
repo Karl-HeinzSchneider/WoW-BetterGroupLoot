@@ -6,7 +6,7 @@ who they are, and move the rolls anywhere on the screen.
 ## Features
 
 - Its own roll frames in place of the default ones, built on the game's loot toast art.
-- A count on every roll button: how many players chose Need, Greed/Transmog or Pass so far.
+- A count on every roll button: how many players chose Need, Greed, Transmog or Pass so far.
 - The buttons' tooltips list those players, class-colored and with their roll numbers, plus (if
   enabled) everyone who hasn't chosen yet.
 - Your own Need roll's number is shown on the frame when the game rolls it.

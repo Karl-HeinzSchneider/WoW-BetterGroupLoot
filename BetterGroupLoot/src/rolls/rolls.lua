@@ -302,7 +302,7 @@ end
 
 local function randomPreviewChoices()
     local choices = api.NewChoices()
-    local picks = { "need", "greed", "pass", "undecided", "undecided" }
+    local picks = { "need", "transmog", "greed", "pass", "undecided", "undecided" }
     for _, player in ipairs(PREVIEW_PLAYERS) do
         local choice = picks[math.random(#picks)]
         table.insert(choices[choice], {

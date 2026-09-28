@@ -15,12 +15,13 @@ local L = {
     nobody = "Nobody yet.",
 }
 
--- Which choices a button counts and lists. Greed and Transmog are the same tier (one or the other
--- is offered per player), so each shows both.
+-- Which choices a button's tooltip lists, in the order they win (a button counts only its own
+-- choice). A player is offered either Greed or Transmog, and Transmog beats Greed, so both
+-- tooltips list both: the Greed roller sees who is ahead of them.
 ---@type table<string, BetterGroupLoot.Choice[]>
-local BUTTON_CHOICES = {
+local TOOLTIP_CHOICES = {
     need = { "need" },
-    greed = { "greed", "transmog" },
+    greed = { "transmog", "greed" },
     transmog = { "transmog", "greed" },
     pass = { "pass" },
 }
@@ -81,7 +82,7 @@ function BetterGroupLootRollButtonMixin:OnEnter()
     if self.reason then
         GameTooltip:AddLine(self.reason, RED_FONT_COLOR.r, RED_FONT_COLOR.g, RED_FONT_COLOR.b, true)
     end
-    self:GetParent():AddChoicesToTooltip(GameTooltip, BUTTON_CHOICES[self.choice])
+    self:GetParent():AddChoicesToTooltip(GameTooltip, TOOLTIP_CHOICES[self.choice])
     GameTooltip:Show()
 end
 
@@ -198,15 +199,7 @@ function BetterGroupLootRollFrameMixin:UpdateChoices()
 
     local choices = self.choices
     for _, button in ipairs(self.buttons) do
-        local text = ""
-        if choices then
-            local count = 0
-            for _, choice in ipairs(BUTTON_CHOICES[button.choice]) do
-                count = count + #choices[choice]
-            end
-            text = tostring(count)
-        end
-        button.Count:SetText(text)
+        button.Count:SetText(choices and tostring(#choices[button.choice]) or "")
         if GameTooltip:IsOwned(button) then
             button:OnEnter()
         end
