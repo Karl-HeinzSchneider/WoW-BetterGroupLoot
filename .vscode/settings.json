@@ -74,7 +74,13 @@
     "REQUIRES_LABEL",
     "SKILL",
     "SOURCE",
-    "TRADE_SKILLS"
+    "TRADE_SKILLS",
+    "RAID_CLASS_COLORS",
+    "ColorManager",
+    "GroupLootContainer_OpenNewFrame",
+    "InputUtil",
+    "GroupLootContainer_RemoveFrame",
+    "GroupLootContainer"
   ],
   "Lua.diagnostics.disable": [
     "assign-type-mismatch",
