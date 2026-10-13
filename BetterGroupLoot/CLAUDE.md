@@ -47,8 +47,13 @@ be listed**. The order follows these rules:
   functions, the `events` table, the normalized `RollItem` / `Roller` / `RollChoices` tables),
   `api.RollType`, `api.NewChoices()`, `api:Implement(client, impl)` (checks that nothing is
   missing) and `api:IsSupported()`.
-- `forever.lua` — WoW Forever (1.6, retail family). Picks itself when
-  `C_LootHistory.GetSortedDropsForEncounter` exists. Rolls come from `START_LOOT_ROLL` /
+- `common.lua` — `api.CreateImplementation()` creates shared roll/item/display operations;
+  load it after `api.lua` and before either adapter.
+- `classic.lua` — Era, Anniversary and progression Classic. Resolves history by exact roll ID
+  on each update, restores active rolls using remaining time, and post-hooks
+  `GroupLootFrame_OpenNewFrame` to remove default frames. No instant Need or cancel-all event.
+- `forever.lua` — WoW Forever (1.6, retail family). Picks itself on interface 16001 when
+  `C_LootHistory.GetSortedDropsForEncounter` exists; retail stays unsupported. Rolls come from `START_LOOT_ROLL` /
   `GetLootRollItemInfo`; who chose what comes from the encounter-based loot history, which has no
   rollID: `findDrop()` pairs a roll with a history drop by item link (then item ID), preferring
   open drops and skipping drops already paired with another roll. Rolls without a history entry
@@ -56,7 +61,7 @@ be listed**. The order follows these rules:
   post-hooks `GroupLootContainer_OpenNewFrame` and closes the client's frame through
   `GroupLootContainer_RemoveFrame`.
 
-**Adding a client** (e.g. Classic): a new `src/api/<client>.lua` that returns early unless its API
+**Adding a client**: a new `src/api/<client>.lua` that returns early unless its API
 exists (and `app.api.client` is still nil), builds the same functions and calls
 `app.api:Implement("<client>", impl)`; list it in the TOC after `api.lua`. Nothing in `src/rolls/`
 may call the game's loot API directly.

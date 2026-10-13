@@ -23,6 +23,7 @@ ignore:
   - docs
   - screenshots
   - src
+  - tests
   - package.json
   - package-lock.json
   - tsconfig.json

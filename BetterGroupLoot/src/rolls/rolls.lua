@@ -57,7 +57,9 @@ function module:OnEnable()
     local events = api.events
     self:RegisterEvent(events.rollStarted, "OnRollStarted")
     self:RegisterEvent(events.rollCancelled, "OnRollCancelled")
-    self:RegisterEvent(events.allRollsCancelled, "OnAllRollsCancelled")
+    if events.allRollsCancelled then
+        self:RegisterEvent(events.allRollsCancelled, "OnAllRollsCancelled")
+    end
     if events.needRollResult then
         self:RegisterEvent(events.needRollResult, "OnNeedRollResult")
     end
@@ -302,7 +304,8 @@ end
 
 local function randomPreviewChoices()
     local choices = api.NewChoices()
-    local picks = { "need", "transmog", "greed", "pass", "undecided", "undecided" }
+    local picks = { "need", "greed", "pass", "undecided", "undecided" }
+    picks[#picks + 1] = api.client == "forever" and "transmog" or "disenchant"
     for _, player in ipairs(PREVIEW_PLAYERS) do
         local choice = picks[math.random(#picks)]
         table.insert(choices[choice], {
@@ -331,9 +334,9 @@ local function newPreview(index)
             bindOnPickUp = true,
             canNeed = true,
             canGreed = true,
-            -- The second preview shows the Transmog button in Greed's place.
-            canTransmog = index == 2,
-            canDisenchant = false,
+            -- The second preview demonstrates the adapter's additional choice.
+            canTransmog = api.client == "forever" and index == 2,
+            canDisenchant = api.client == "classic" and index == 2,
         },
         choices = randomPreviewChoices(),
         duration = PREVIEW_DURATION,

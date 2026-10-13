@@ -5,13 +5,14 @@ local _, app = ...
 -- (START_LOOT_ROLL, GetLootRollItemInfo, RollOnLoot), but who chose what lives in the
 -- encounter-based loot history (C_LootHistory.GetSortedDropsForEncounter), which knows nothing
 -- about rollIDs; findDrop() pairs the two up.
-if app.api.client or not (C_LootHistory and C_LootHistory.GetSortedDropsForEncounter) then
+local _, _, _, interface = GetBuildInfo()
+if interface ~= 16001 or app.api.client or not (C_LootHistory and C_LootHistory.GetSortedDropsForEncounter) then
     return
 end
 
 local log = app.logger
 
-local impl = {}
+local impl = app.api.CreateImplementation()
 
 impl.events = {
     rollStarted = "START_LOOT_ROLL",
@@ -47,47 +48,6 @@ function impl.GetActiveRolls()
         rolls[#rolls + 1] = { rollID = rollID, duration = C_Loot.GetLootRollDuration(rollID) or 0 }
     end
     return rolls
-end
-
-local function ineligibleReason(allowed, code)
-    if allowed or not code then
-        return nil
-    end
-    return _G["LOOT_ROLL_INELIGIBLE_REASON" .. code]
-end
-
-function impl.GetRollItem(rollID)
-    local texture, name, count, quality, bindOnPickUp, canNeed, canGreed, canDisenchant, reasonNeed, reasonGreed, reasonDisenchant, _, canTransmog =
-        GetLootRollItemInfo(rollID)
-    if not name then
-        return nil
-    end
-
-    ---@type BetterGroupLoot.RollItem
-    local item = {
-        name = name,
-        texture = texture,
-        link = GetLootRollItemLink(rollID),
-        count = count or 1,
-        quality = quality or 1,
-        bindOnPickUp = bindOnPickUp and true or false,
-        canNeed = canNeed and true or false,
-        canGreed = canGreed and true or false,
-        canTransmog = canTransmog and true or false,
-        canDisenchant = canDisenchant and true or false,
-        reasonNeed = ineligibleReason(canNeed, reasonNeed),
-        reasonGreed = ineligibleReason(canGreed, reasonGreed),
-        reasonDisenchant = ineligibleReason(canDisenchant, reasonDisenchant),
-    }
-    return item
-end
-
-function impl.GetRollTimeLeft(rollID)
-    return GetLootRollTimeLeft(rollID) or 0
-end
-
-function impl.Roll(rollID, rollType)
-    RollOnLoot(rollID, rollType)
 end
 
 -- Choices: rollID -> loot history drop ------------------------------------------------------------
@@ -186,41 +146,6 @@ function impl.ForgetRoll(rollID)
 end
 
 -- Display helpers --------------------------------------------------------------------------------
-
-function impl.SetItemTooltip(tooltip, rollID)
-    tooltip:SetLootRollItem(rollID)
-end
-
-function impl.HandleModifiedItemClick(rollID)
-    local link = GetLootRollItemLink(rollID)
-    if link then
-        HandleModifiedItemClick(link)
-    end
-end
-
-function impl.GetQualityColor(quality)
-    local color = (ColorManager and ColorManager.GetColorDataForItemQuality(quality)) or ITEM_QUALITY_COLORS[quality]
-    if color then
-        return color.r, color.g, color.b
-    end
-    return 1, 1, 1
-end
-
-function impl.GetQualityBorderAtlas(quality)
-    local atlas = ColorManager
-        and ColorManager.GetAtlasDataForLootBorderItemQuality
-        and ColorManager.GetAtlasDataForLootBorderItemQuality(quality)
-    return atlas or "loottoast-itemborder-white"
-end
-
-function impl.ColorizeName(name, class)
-    local colors = CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS
-    local color = class and colors[class]
-    if color and color.colorStr then
-        return "|c" .. color.colorStr .. name .. "|r"
-    end
-    return name
-end
 
 -- In gamepad mode the client lists rolls in a panel of its own instead of the roll frames.
 function impl.IsRollUIActive()
