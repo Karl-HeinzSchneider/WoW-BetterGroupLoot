@@ -1,20 +1,25 @@
 # BetterGroupLoot
 
-Better group loot rolls for WoW Forever: see how many players chose Need, Greed, Transmog or Pass,
+Better group loot rolls for WoW Forever, Classic Anniversary, Classic Era (including Hardcore
+and Season of Discovery), and progression Classic (Mists): see how many players chose Need,
+Greed, Disenchant, Transmog or Pass,
 who they are, and move the rolls anywhere on the screen.
 
 ## Features
 
 - Its own roll frames in place of the default ones, built on the game's loot toast art.
-- A count on every roll button: how many players chose Need, Greed, Transmog or Pass so far.
+- A count on every roll button: how many players chose Need, Greed, Disenchant, Transmog or Pass so far.
 - The buttons' tooltips list those players, class-colored and with their roll numbers, plus (if
   enabled) everyone who hasn't chosen yet.
-- Your own Need roll's number is shown on the frame when the game rolls it.
+- Disenchant is offered when the client allows it; Transmog is available on Forever.
+- Your own instant Need roll's number is shown on Forever when the game rolls it.
 - Move the rolls anywhere: unlock them, drag the anchor, lock them again. Scale, spacing and
   stacking direction are adjustable, and every setting is per profile.
 
-Roll counts come from the game's loot history. Rolls the loot history doesn't list (outside boss
-encounters) show no counts.
+Roll counts come from the game's loot history. Classic clients match entries by roll ID;
+Forever matches encounter drops to rolls. Rolls the loot history doesn't list show no counts.
+Retail WoW is not supported. This replaces group loot rolls; personal loot and master loot
+continue to use the game's UI.
 
 ## Installation
 

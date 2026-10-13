@@ -6,7 +6,7 @@ that apply everywhere; the addon folder has its own `CLAUDE.md` with its load or
 ## What this is
 
 BetterGroupLoot is a World of Warcraft addon (Lua 5.1 on top of Ace3) for the client set by the
-TOC's `## Interface` (`16001` = WoW Forever), plus the Node/TypeScript tooling that checks,
+TOC's `## Interface` (Forever, Anniversary, Era and progression Classic; excluding retail), plus the Node/TypeScript tooling that checks,
 links and packages it.
 
 | Part               | What it is                                                                                                                          | Details                                                |
@@ -43,6 +43,9 @@ WoW addons are plain Lua/XML files loaded by the game; there is no build step. T
 
 Static checks also used ad hoc: `lua-language-server --check` (config in `.luarc.json`; `lib/` is
 excluded from LuaLS, StyLua and Prettier).
+
+`npm run check:compat` runs the offline client-adapter regressions in `tests/compat.lua`
+(Lua 5.1 on PATH); it is also included in `npm run check`. Tests never ship in the package.
 
 ## Tooling (`src/`)
 

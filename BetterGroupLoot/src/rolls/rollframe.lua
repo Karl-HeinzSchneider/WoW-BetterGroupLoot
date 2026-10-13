@@ -18,10 +18,12 @@ local L = {
 -- Which choices a button's tooltip lists, in the order they win (a button counts only its own
 -- choice). A player is offered either Greed or Transmog, and Transmog beats Greed, so both
 -- tooltips list both: the Greed roller sees who is ahead of them.
+-- On Classic, Greed and Disenchant have equal priority and list each other's players.
 ---@type table<string, BetterGroupLoot.Choice[]>
 local TOOLTIP_CHOICES = {
     need = { "need" },
-    greed = { "transmog", "greed" },
+    greed = { "transmog", "greed", "disenchant" },
+    disenchant = { "greed", "disenchant" },
     transmog = { "transmog", "greed" },
     pass = { "pass" },
 }
@@ -97,6 +99,7 @@ end
 ---@field NeedButton BetterGroupLootRollButtonMixin
 ---@field GreedButton BetterGroupLootRollButtonMixin
 ---@field TransmogButton BetterGroupLootRollButtonMixin
+---@field DisenchantButton BetterGroupLootRollButtonMixin
 ---@field PassButton BetterGroupLootRollButtonMixin
 ---@field buttons BetterGroupLootRollButtonMixin[]
 ---@field rollID number? the real roll shown, nil for a preview
@@ -116,7 +119,16 @@ BetterGroupLootRollFrameMixin = {}
 ---@field timeLeft number milliseconds, counts down and starts over
 
 function BetterGroupLootRollFrameMixin:OnLoad()
-    self.buttons = { self.NeedButton, self.GreedButton, self.TransmogButton, self.PassButton }
+    self.buttons = { self.NeedButton, self.GreedButton, self.TransmogButton, self.DisenchantButton, self.PassButton }
+    -- XML supplies portable button textures; use toast art where the client provides it.
+    for _, button in ipairs(self.buttons) do
+        local prefix = "lootroll-toast-icon-" .. button.choice
+        if C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(prefix .. "-up") then
+            button:GetNormalTexture():SetAtlas(prefix .. "-up")
+            button:GetPushedTexture():SetAtlas(prefix .. "-down")
+            button:GetHighlightTexture():SetAtlas(prefix .. "-highlight")
+        end
+    end
     self.duration = 0
 end
 
@@ -181,6 +193,9 @@ function BetterGroupLootRollFrameMixin:SetItem(item)
     self.TransmogButton:SetAllowed(true)
     self.GreedButton:SetShown(not item.canTransmog)
     self.GreedButton:SetAllowed(item.canGreed, item.reasonGreed)
+
+    self.DisenchantButton:SetShown(item.canDisenchant or item.reasonDisenchant ~= nil)
+    self.DisenchantButton:SetAllowed(item.canDisenchant, item.reasonDisenchant)
 
     self.Timer:SetMinMaxValues(0, math.max(self.duration, 1))
     self.Timer:SetFrameLevel(math.max(self:GetFrameLevel() - 1, 0))

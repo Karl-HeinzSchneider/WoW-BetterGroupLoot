@@ -8,7 +8,7 @@ local log = app.logger
 -- to forever.lua that provides the same functions, and listing it in the TOC.
 --
 -- Each client file decides at load time whether it fits the running client (by checking for the
--- API it needs, not by version numbers) and, if so, hands its functions to api:Implement(). The
+-- API it needs and any client restrictions) and hands its functions to api:Implement(). The
 -- first file that fits wins; api.client names it. None fitting leaves the addon inactive.
 
 ---@alias BetterGroupLoot.Choice "need"|"greed"|"transmog"|"disenchant"|"pass"|"undecided"
@@ -49,11 +49,12 @@ local log = app.logger
 ---@class BetterGroupLoot.ApiEvents
 ---@field rollStarted string (rollID, durationMs)
 ---@field rollCancelled string (rollID)
----@field allRollsCancelled string ()
+---@field allRollsCancelled string? ()
 ---@field needRollResult string? (rollID, roll, isWinning); nil on a client without instant Need rolls
 ---@field choicesChanged string[] any payload; the roll frames re-read GetRollChoices
 
 ---@class BetterGroupLoot.Api
+---@field CreateImplementation fun(): table shared operations for a client adapter
 ---@field client string? the implementation in use, nil when none fits this client
 ---@field events BetterGroupLoot.ApiEvents
 ---@field GetActiveRolls fun(): BetterGroupLoot.ActiveRoll[] rolls already running (after a /reload or loading screen)

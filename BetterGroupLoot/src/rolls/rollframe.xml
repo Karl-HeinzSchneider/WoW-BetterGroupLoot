@@ -92,9 +92,9 @@
 				<Anchors>
 					<Anchor point="TOPLEFT" x="202" y="-7" />
 				</Anchors>
-				<NormalTexture atlas="lootroll-toast-icon-need-up" />
-				<HighlightTexture atlas="lootroll-toast-icon-need-highlight" alphaMode="ADD" />
-				<PushedTexture atlas="lootroll-toast-icon-need-down" />
+				<NormalTexture file="Interface\Buttons\UI-GroupLoot-Dice-Up" />
+				<HighlightTexture file="Interface\Buttons\UI-GroupLoot-Dice-Highlight" alphaMode="ADD" />
+				<PushedTexture file="Interface\Buttons\UI-GroupLoot-Dice-Down" />
 			</Button>
 			<Button parentKey="PassButton" inherits="BetterGroupLootRollButtonTemplate">
 				<KeyValues>
@@ -104,9 +104,9 @@
 				<Anchors>
 					<Anchor point="LEFT" relativeKey="$parent.NeedButton" relativePoint="RIGHT" x="6" y="2" />
 				</Anchors>
-				<NormalTexture atlas="lootroll-toast-icon-pass-up" />
-				<HighlightTexture atlas="lootroll-toast-icon-pass-highlight" alphaMode="ADD" />
-				<PushedTexture atlas="lootroll-toast-icon-pass-down" />
+				<NormalTexture file="Interface\Buttons\UI-GroupLoot-Pass-Up" />
+				<HighlightTexture file="Interface\Buttons\UI-GroupLoot-Pass-Highlight" alphaMode="ADD" />
+				<PushedTexture file="Interface\Buttons\UI-GroupLoot-Pass-Down" />
 			</Button>
 			<Button parentKey="GreedButton" inherits="BetterGroupLootRollButtonTemplate">
 				<KeyValues>
@@ -116,9 +116,9 @@
 				<Anchors>
 					<Anchor point="TOP" relativeKey="$parent.NeedButton" relativePoint="BOTTOM" x="0" y="5" />
 				</Anchors>
-				<NormalTexture atlas="lootroll-toast-icon-greed-up" />
-				<HighlightTexture atlas="lootroll-toast-icon-greed-highlight" alphaMode="ADD" />
-				<PushedTexture atlas="lootroll-toast-icon-greed-down" />
+				<NormalTexture file="Interface\Buttons\UI-GroupLoot-Coin-Up" />
+				<HighlightTexture file="Interface\Buttons\UI-GroupLoot-Coin-Highlight" alphaMode="ADD" />
+				<PushedTexture file="Interface\Buttons\UI-GroupLoot-Coin-Down" />
 			</Button>
 			<!-- Takes Greed's place when the item can be rolled for transmog. -->
 			<Button parentKey="TransmogButton" inherits="BetterGroupLootRollButtonTemplate" hidden="true">
@@ -129,10 +129,24 @@
 				<Anchors>
 					<Anchor point="CENTER" relativeKey="$parent.GreedButton" relativePoint="CENTER" />
 				</Anchors>
-				<NormalTexture atlas="lootroll-toast-icon-transmog-up" />
-				<HighlightTexture atlas="lootroll-toast-icon-transmog-highlight" alphaMode="ADD" />
-				<PushedTexture atlas="lootroll-toast-icon-transmog-down" />
+				<NormalTexture file="Interface\Buttons\UI-GroupLoot-Coin-Up" />
+				<HighlightTexture file="Interface\Buttons\UI-GroupLoot-Coin-Highlight" alphaMode="ADD" />
+				<PushedTexture file="Interface\Buttons\UI-GroupLoot-Coin-Down" />
 			</Button>
+
+
+            <Button parentKey="DisenchantButton" inherits="BetterGroupLootRollButtonTemplate" hidden="true">
+                <KeyValues>
+                    <KeyValue key="choice" value="disenchant" type="string" />
+                    <KeyValue key="rollType" value="3" type="number" />
+                </KeyValues>
+                <Anchors>
+                    <Anchor point="TOP" relativeKey="$parent.PassButton" relativePoint="BOTTOM" x="0" y="5" />
+                </Anchors>
+                <NormalTexture file="Interface\Buttons\UI-GroupLoot-DE-Up" />
+                <HighlightTexture file="Interface\Buttons\UI-GroupLoot-DE-Highlight" alphaMode="ADD" />
+                <PushedTexture file="Interface\Buttons\UI-GroupLoot-DE-Down" />
+            </Button>
 
 			<!-- Sits one frame level below the roll frame (set in the mixin), so the border overlaps it. -->
 			<StatusBar parentKey="Timer" drawLayer="ARTWORK" minValue="0" maxValue="60000" defaultValue="0">
