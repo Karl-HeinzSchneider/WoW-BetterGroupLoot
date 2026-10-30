@@ -12,7 +12,14 @@
 ---@field db BetterGroupLoot.DB
 ---@field options BetterGroupLoot.Options  # the AceConfig options, in the Settings panel and a standalone window
 ---@field api BetterGroupLoot.Api  # the client's loot API behind one interface (src/api/)
----@field rolls BetterGroupLoot.Rolls  # the roll frames, their anchor and the preview
+---@field StartGroupLoot fun(host: table): BetterGroupLoot.Rolls?, table?
+---@field runtimeOwner table?
+---@field rollStrings table<string, string>? Optional complete tooltip text supplied before loading rollframe.lua
+---@field RollController BetterGroupLoot.Rolls
+---@field RollButtonMixin table
+---@field RollFrameMixin table
+---@field CreateRollFrame fun(parent: Frame, name: string): BetterGroupLootRollFrameMixin
+---@field rolls BetterGroupLoot.Rolls?  # the roll frames, their anchor and the preview
 
 -- The AceDB object, with profile/char/global narrowed to the shape of app.dbDefaults.
 -- Ace3 API types (AceAddon, AceDBObject-3.0, ...) come from the ketho.wow-api extension.

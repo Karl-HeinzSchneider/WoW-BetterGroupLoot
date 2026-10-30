@@ -65,12 +65,15 @@ function impl.IsRollUIActive()
 end
 
 local hidden = false
-function impl.HideBlizzardRollFrames()
+function impl.HideBlizzardRollFrames(isActive)
     if hidden or not GroupLootFrame_OpenNewFrame or not GroupLootContainer_RemoveFrame then
         return
     end
     hidden = true
     local function closeFrames(rollID)
+        if isActive and not isActive() then
+            return
+        end
         for index = 1, NUM_GROUP_LOOT_FRAMES or 4 do
             local frame = _G["GroupLootFrame" .. index]
             if frame and frame:IsShown() and (not rollID or frame.rollID == rollID) then

@@ -9,17 +9,13 @@ numbers), and the stack of rolls can be dragged anywhere.
 
 ## Load order (`BetterGroupLoot.toc`)
 
-The TOC is the manifest and the source of truth for the load order; **every new Lua/XML file must
-be listed**. The order follows these rules:
+Libraries, standalone core, client API contract/common/adapters, private roll mixins,
+frame factory, controller, runtime ownership entry point, standalone lifecycle adapter,
+then BetterGroupLoot.lua. Every Lua file must appear in the TOC.
 
-1. `embeds.xml` first: every vendored library in dependency order (LibStub → CallbackHandler →
-   Ace\*).
-2. `src\core\`: `logger.lua` first (everything logs), `db.lua` (the defaults `ace.lua` needs),
-   `ace.lua` (creates `app.addon`), then `options.lua`.
-3. `src\api\`: `api.lua` (the contract) before the client files (`forever.lua`), which fill it in.
-4. `src\rolls\`: `rollframe.lua` (the mixins) before `rollframe.xml` (the templates naming them),
-   then `rolls.lua` (the module creating frames from them).
-5. `BetterGroupLoot.lua` last; it only logs.
+The reusable subset is `src/api/` and `src/rolls/`, in TOC order. These files do not
+create frames, register events or install overrides until `app.StartGroupLoot(host)`.
+See `docs/embedding.md` for the host contract and ownership limitations.
 
 ## Files
 
@@ -68,18 +64,17 @@ may call the game's loot API directly.
 
 ### `src/rolls/`
 
-- `rollframe.lua` — `BetterGroupLootRollButtonMixin` (one choice: count, tooltip listing the
-  players, click rolls) and `BetterGroupLootRollFrameMixin` (a roll: `SetRoll(rollID, duration)` for
-  a real roll, `SetPreview(preview)` for a fake one, `UpdateChoices()`, `ShowNeedRoll()` for the own
-  instant Need roll's number, `Reset()` for the pool). Each button counts only its own choice;
-  the Greed and Transmog tooltips both list Transmog, then Greed (Transmog beats Greed).
-- `rollframe.xml` — `BetterGroupLootRollButtonTemplate` and `BetterGroupLootRollFrameTemplate`
-  (277×67), our own templates on the game's loot toast art (`Interface\LootFrame\LootToast`) and
-  the `lootroll-toast-icon-*` / `loottoast-itemborder-*` atlases.
-- `rolls.lua` — `app.rolls`, the "Rolls" module: the movable anchor (`BetterGroupLootAnchor`), the
-  frame pool, stacking (`Layout`), the roll events from `api.events`, `SyncActiveRolls` after a
-  loading screen, and the unlock mode (`SetUnlocked`: a drag handle over the first slot plus three
-  preview rolls).
+- `rollframe.lua` � private `app.RollButtonMixin` and `app.RollFrameMixin`: choice
+  counts/tooltips, real rolls, previews and item rendering. No global mixins.
+- `frames.lua` � `app.CreateRollFrame(parent, name)`, the original 277�67 layout and
+  game art constructed in Lua, with private mixins and unnamed child frames.
+- `rolls.lua` � `app.RollController`: anchor, pooled frames, layout, roll events,
+  preview generation and optional legacy unlock mover. Settings use `host.getProfile()`.
+- `runtime.lua` � `app.StartGroupLoot(host)` checks the shared owner first, then
+  creates/starts a controller. The first startup reserves ownership until reload;
+  other copies return `nil, owner` without UI/events/hooks. Stop makes hooks inert.
+- `src/core/standalone.lua` � the standalone Rolls AceModule starts/stops the
+  controller and forwards profile changes. Embedded hosts must not load this file.
 
 ### Annotations (not in the TOC)
 
@@ -96,8 +91,14 @@ may call the game's loot API directly.
 
 ## Conventions
 
-- Prototype-style Ace modules: define methods on a local `module` table and pass it to
-  `addon:NewModule("Name", module, …)`; state lives on the object Ace returns (see `rolls.lua`).
+- Standalone prototype-style Ace modules: define methods on a local `module` table and pass it to
+  `addon:NewModule("Name", module, …)`; state lives on the object Ace returns. The shared roll controller uses a private prototype.
   A module that depends on profile settings defines `OnProfileRefresh`.
 - New user settings get a default in `db.lua` and an entry in `options.lua`.
 - Game loot API calls go through `app.api` only (see `src/api/`).
+
+## Regression tests
+
+`npm run check:compat` runs `tests/compat.lua` and `tests/runtime.lua` with Lua 5.1.
+Runtime tests cover independently loaded copies, both ownership orders, no startup
+side effects in the losing copy, private prefixed frames, pooling and profile changes.

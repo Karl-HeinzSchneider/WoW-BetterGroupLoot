@@ -3,17 +3,18 @@ local _, app = ...
 
 local api = app.api
 
-local L = {
-    need = NEED or "Need",
-    greed = GREED or "Greed",
-    transmog = TRANSMOGRIFICATION or "Transmog",
-    disenchant = ROLL_DISENCHANT or "Disenchant",
-    pass = PASS or "Pass",
-    undecided = "Undecided",
-    offSpec = "off spec",
-    noData = "No roll data yet.",
-    nobody = "Nobody yet.",
-}
+local L = app.rollStrings
+    or {
+        need = NEED or "Need",
+        greed = GREED or "Greed",
+        transmog = TRANSMOGRIFICATION or "Transmog",
+        disenchant = ROLL_DISENCHANT or "Disenchant",
+        pass = PASS or "Pass",
+        undecided = "Undecided",
+        offSpec = "off spec",
+        noData = "No roll data yet.",
+        nobody = "Nobody yet.",
+    }
 
 -- Which choices a button's tooltip lists, in the order they win (a button counts only its own
 -- choice). A player is offered either Greed or Transmog, and Transmog beats Greed, so both
@@ -59,11 +60,12 @@ end
 -- Roll button -----------------------------------------------------------------------------------
 
 ---@class BetterGroupLootRollButtonMixin : Button
----@field choice string need, greed, transmog or pass (XML KeyValue)
----@field rollType number api.RollType (XML KeyValue)
+---@field choice string need, greed, transmog or pass
+---@field rollType number api.RollType
 ---@field Count FontString
 ---@field reason string? why the button is disabled
-BetterGroupLootRollButtonMixin = {}
+local BetterGroupLootRollButtonMixin = {}
+app.RollButtonMixin = BetterGroupLootRollButtonMixin
 
 ---@param allowed boolean
 ---@param reason string?
@@ -108,7 +110,8 @@ end
 ---@field choices BetterGroupLoot.RollChoices?
 ---@field duration number milliseconds
 ---@field finishing boolean? showing the own Need roll's result; buttons and timer are done
-BetterGroupLootRollFrameMixin = {}
+local BetterGroupLootRollFrameMixin = {}
+app.RollFrameMixin = BetterGroupLootRollFrameMixin
 
 -- A fake roll for the unlocked (preview) mode; see rolls.lua.
 ---@class BetterGroupLoot.Preview
@@ -120,7 +123,7 @@ BetterGroupLootRollFrameMixin = {}
 
 function BetterGroupLootRollFrameMixin:OnLoad()
     self.buttons = { self.NeedButton, self.GreedButton, self.TransmogButton, self.DisenchantButton, self.PassButton }
-    -- XML supplies portable button textures; use toast art where the client provides it.
+    -- The factory supplies portable button textures; use toast art where the client provides it.
     for _, button in ipairs(self.buttons) do
         local prefix = "lootroll-toast-icon-" .. button.choice
         if C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(prefix .. "-up") then
@@ -239,7 +242,7 @@ function BetterGroupLootRollFrameMixin:AddChoicesToTooltip(tooltip, choiceList)
         tooltip:AddLine(" ")
         tooltip:AddLine(L.nobody, GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
     end
-    if app.db.profile.showUndecided then
+    if self.controller:GetProfile().showUndecided then
         addChoiceSection(tooltip, "undecided", choices.undecided)
     end
 end

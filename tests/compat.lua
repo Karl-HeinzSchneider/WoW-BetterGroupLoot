@@ -112,9 +112,19 @@ for _, project in ipairs({ 2, 5, 19 }) do
     GroupLootContainer_RemoveFrame = function(_, frame)
         frame.shown = false
     end
-    api.HideBlizzardRollFrames()
+    local active = true
+    api.HideBlizzardRollFrames(function()
+        return active
+    end)
     equal(GroupLootFrame1.shown, false)
     GroupLootFrame1.shown = true
+    hooks.GroupLootFrame_OpenNewFrame(10)
+    equal(GroupLootFrame1.shown, false)
+    active = false
+    GroupLootFrame1.shown = true
+    hooks.GroupLootFrame_OpenNewFrame(10)
+    equal(GroupLootFrame1.shown, true)
+    active = true
     hooks.GroupLootFrame_OpenNewFrame(10)
     equal(GroupLootFrame1.shown, false)
 end
@@ -126,5 +136,29 @@ local encounterHistory = {
     end,
 }
 equal(loadAddon(1, 120105, encounterHistory):IsSupported(), false)
-equal(loadAddon(1, 16001, encounterHistory).client, "forever")
+local forever = loadAddon(1, 16001, encounterHistory)
+equal(forever.client, "forever")
+local active, hook, hookCount = true, nil, 0
+GroupLootContainer_OpenNewFrame = function() end
+hooksecurefunc = function(name, callback)
+    equal(name, "GroupLootContainer_OpenNewFrame")
+    hook, hookCount = callback, hookCount + 1
+end
+forever.HideBlizzardRollFrames(function()
+    return active
+end)
+forever.HideBlizzardRollFrames(function()
+    return active
+end)
+equal(hookCount, 1)
+GroupLootFrame1.shown = true
+hook(10)
+equal(GroupLootFrame1.shown, false)
+active = false
+GroupLootFrame1.shown = true
+hook(10)
+equal(GroupLootFrame1.shown, true)
+active = true
+hook(10)
+equal(GroupLootFrame1.shown, false)
 print("Client compatibility checks passed (Era, Anniversary, Classic, Forever; retail excluded)")

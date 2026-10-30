@@ -28,7 +28,9 @@ local function layoutSetting(key)
         end,
         set = function(_, value)
             app.db.profile[key] = value
-            app.rolls:ApplySettings()
+            if app.rolls then
+                app.rolls:ApplySettings()
+            end
         end,
     }
 end
@@ -40,7 +42,9 @@ local function positionSetting(key)
         end,
         set = function(_, value)
             app.db.profile.position[key] = value
-            app.rolls:ApplySettings()
+            if app.rolls then
+                app.rolls:ApplySettings()
+            end
         end,
     }
 end
@@ -64,10 +68,12 @@ local options = {
             desc = "Shows the roll frames' anchor with a few preview rolls: drag it to move the rolls, "
                 .. "right-click it to lock them again. Same as /bettergrouploot unlock and lock.",
             get = function()
-                return app.rolls.unlocked
+                return app.rolls and app.rolls.unlocked or false
             end,
             set = function(_, value)
-                app.rolls:SetUnlocked(value)
+                if app.rolls then
+                    app.rolls:SetUnlocked(value)
+                end
             end,
         },
         layout = {
@@ -127,7 +133,9 @@ local options = {
                     order = 60,
                     name = "Reset position",
                     func = function()
-                        app.rolls:ResetPosition()
+                        if app.rolls then
+                            app.rolls:ResetPosition()
+                        end
                     end,
                 },
             },
