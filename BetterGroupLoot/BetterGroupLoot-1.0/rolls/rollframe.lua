@@ -1,10 +1,15 @@
----@type string, BetterGroupLoot
-local _, app = ...
+local lib = LibStub("BetterGroupLoot-1.0")
+local internal = lib.internal
+if not internal.loading then
+    return
+end
 
-local api = app.api
+local api = internal.api
 
-local L = app.rollStrings
-    or {
+-- The tooltip text; a host overrides any of it through Start's `strings`.
+---@return table<string, string>
+function internal.DefaultStrings()
+    return {
         need = NEED or "Need",
         greed = GREED or "Greed",
         transmog = TRANSMOGRIFICATION or "Transmog",
@@ -15,6 +20,7 @@ local L = app.rollStrings
         noData = "No roll data yet.",
         nobody = "Nobody yet.",
     }
+end
 
 -- Which choices a button's tooltip lists, in the order they win (a button counts only its own
 -- choice). A player is offered either Greed or Transmog, and Transmog beats Greed, so both
@@ -34,8 +40,9 @@ local DISABLED_ALPHA = 0.35
 ---@param tooltip GameTooltip
 ---@param choice BetterGroupLoot.Choice
 ---@param rollers BetterGroupLoot.Roller[]
+---@param L table<string, string> the controller's strings
 ---@return boolean added
-local function addChoiceSection(tooltip, choice, rollers)
+local function addChoiceSection(tooltip, L, choice, rollers)
     if #rollers == 0 then
         return false
     end
@@ -65,7 +72,7 @@ end
 ---@field Count FontString
 ---@field reason string? why the button is disabled
 local BetterGroupLootRollButtonMixin = {}
-app.RollButtonMixin = BetterGroupLootRollButtonMixin
+internal.RollButtonMixin = BetterGroupLootRollButtonMixin
 
 ---@param allowed boolean
 ---@param reason string?
@@ -82,6 +89,7 @@ end
 
 function BetterGroupLootRollButtonMixin:OnEnter()
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    local L = self:GetParent().controller.strings
     GameTooltip:SetText(L[self.choice], HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
     if self.reason then
         GameTooltip:AddLine(self.reason, RED_FONT_COLOR.r, RED_FONT_COLOR.g, RED_FONT_COLOR.b, true)
@@ -111,7 +119,7 @@ end
 ---@field duration number milliseconds
 ---@field finishing boolean? showing the own Need roll's result; buttons and timer are done
 local BetterGroupLootRollFrameMixin = {}
-app.RollFrameMixin = BetterGroupLootRollFrameMixin
+internal.RollFrameMixin = BetterGroupLootRollFrameMixin
 
 -- A fake roll for the unlocked (preview) mode; see rolls.lua.
 ---@class BetterGroupLoot.Preview
@@ -227,6 +235,7 @@ end
 ---@param tooltip GameTooltip
 ---@param choiceList BetterGroupLoot.Choice[]
 function BetterGroupLootRollFrameMixin:AddChoicesToTooltip(tooltip, choiceList)
+    local L = self.controller.strings
     local choices = self.choices
     if not choices then
         tooltip:AddLine(" ")
@@ -236,14 +245,14 @@ function BetterGroupLootRollFrameMixin:AddChoicesToTooltip(tooltip, choiceList)
 
     local any = false
     for _, choice in ipairs(choiceList) do
-        any = addChoiceSection(tooltip, choice, choices[choice]) or any
+        any = addChoiceSection(tooltip, L, choice, choices[choice]) or any
     end
     if not any then
         tooltip:AddLine(" ")
         tooltip:AddLine(L.nobody, GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
     end
     if self.controller:GetProfile().showUndecided then
-        addChoiceSection(tooltip, "undecided", choices.undecided)
+        addChoiceSection(tooltip, L, "undecided", choices.undecided)
     end
 end
 

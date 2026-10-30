@@ -1,8 +1,10 @@
----@type string, BetterGroupLoot
-local _, app = ...
+local lib = LibStub("BetterGroupLoot-1.0")
+local internal = lib.internal
+if not internal.loading then
+    return
+end
 
-local log = app.logger
-local api = app.api
+local api = internal.api
 
 -- The roll frames: one per running roll, stacked on a movable anchor. Unlocking shows the anchor
 -- with a few preview rolls, so the frames can be dragged into place.
@@ -25,8 +27,12 @@ local PREVIEW_PLAYERS = {
 }
 local PREVIEW_DURATION = 60000
 
----@class BetterGroupLoot.Rolls : AceEvent-3.0
----@field host table
+---@class BetterGroupLoot.Rolls
+---@field host table the normalized Start options
+---@field logger BetterGroupLoot.Logger
+---@field strings table<string, string> tooltip text
+---@field eventFrame Frame
+---@field eventHandlers table<string, string> event -> method name
 ---@field active boolean
 ---@field editMode table? Optional Edit Mode registration retained across disable/enable
 ---@field anchor Frame
@@ -35,16 +41,21 @@ local PREVIEW_DURATION = 60000
 ---@field frames BetterGroupLootRollFrameMixin[] shown frames in stacking order: real rolls, then previews
 ---@field unlocked boolean
 local module = {}
--- The host calls this only after claiming ownership in StartGroupLoot.
+-- lib:Start calls this only after claiming ownership.
 function module:Initialize(host)
     self.host = host
     self.frames = {}
     self.unlocked = false
+    self.eventHandlers = {}
+    self.eventFrame = CreateFrame("Frame")
+    self.eventFrame:SetScript("OnEvent", function(_, event, ...)
+        self[self.eventHandlers[event]](self, event, ...)
+    end)
     self:CreateAnchor()
     local count = 0
     self.pool = CreateObjectPool(function()
         count = count + 1
-        local frame = app.CreateRollFrame(self.anchor, host.prefix .. "RollFrame" .. count)
+        local frame = internal.CreateRollFrame(self.anchor, host.prefix .. "RollFrame" .. count)
         frame.controller = self
         return frame
     end, function(_, frame)
@@ -55,6 +66,19 @@ end
 
 function module:GetProfile()
     return self.host.getProfile()
+end
+
+-- Game events call the named method with (event, ...), like AceEvent.
+---@param event string
+---@param method string
+function module:RegisterEvent(event, method)
+    self.eventHandlers[event] = method
+    self.eventFrame:RegisterEvent(event)
+end
+
+function module:UnregisterAllEvents()
+    self.eventFrame:UnregisterAllEvents()
+    wipe(self.eventHandlers)
 end
 
 function module:RefreshOptions()
@@ -263,10 +287,10 @@ function module:AddRoll(rollID, duration)
     local frame = self.pool:Acquire() --[[@as BetterGroupLootRollFrameMixin]]
     if not frame:SetRoll(rollID, duration or 0) then
         self.pool:Release(frame)
-        log:debug("Roll %d has no item", rollID)
+        self.logger:debug("Roll %d has no item", rollID)
         return
     end
-    log:debug("Roll %d started: %s", rollID, frame.item.link or frame.item.name)
+    self.logger:debug("Roll %d started: %s", rollID, frame.item.link or frame.item.name)
     self:InsertFrame(frame)
 end
 
@@ -338,7 +362,7 @@ function module:SetUnlocked(unlocked)
         return
     end
     if unlocked and not api:IsSupported() then
-        log:chat("This client's loot API is not supported.")
+        self.logger:chat("This client's loot API is not supported.")
         return
     end
     if self.unlocked == unlocked then
@@ -458,4 +482,4 @@ function module:Stop()
     end
 end
 
-app.RollController = module
+internal.RollController = module

@@ -1,8 +1,11 @@
 ---@type string, BetterGroupLoot
 local appName, app = ...
 
--- standalone.xml supplies the private library. Embedded hosts supply their own
--- library and explicitly register the controller, or register its anchor themselves.
+-- The standalone addon is a host of BetterGroupLoot-1.0 like any embedding addon: it starts the
+-- library with its saved profile and logger, and registers it with the private LibEditMode
+-- that standalone.xml loads.
+local library = LibStub("BetterGroupLoot-1.0")
+
 local module = {}
 app.addon:NewModule("Rolls", module, "AceEvent-3.0")
 
@@ -14,20 +17,17 @@ function module:RegisterEditMode()
         self:RegisterEvent("PLAYER_REGEN_ENABLED", "RegisterEditMode")
         return
     end
-    app.rolls:RegisterEditMode(app.LibEditMode, {
-        name = appName,
-        defaults = app.dbDefaults.profile,
-    })
+    app.rolls:RegisterEditMode(app.LibEditMode, { name = appName })
     self:UnregisterAllEvents()
 end
 
 function module:OnEnable()
-    local controller, owner = app.StartGroupLoot({
-        prefix = appName,
+    local controller, owner = library:Start({
+        name = appName,
+        logger = app.logger,
         getProfile = function()
             return app.db.profile
         end,
-        defaultPosition = app.dbDefaults.profile.position,
         changed = function()
             app.options:Refresh()
         end,

@@ -1,9 +1,12 @@
----@type string, BetterGroupLoot
-local _, app = ...
+local lib = LibStub("BetterGroupLoot-1.0")
+local internal = lib.internal
+if not internal.loading then
+    return
+end
 
 local function CreateRollButton(parent, choice, rollType, texture)
     local button = CreateFrame("Button", nil, parent)
-    Mixin(button, app.RollButtonMixin)
+    Mixin(button, internal.RollButtonMixin)
     button:SetSize(32, 32)
     button:SetMotionScriptsWhileDisabled(true)
     button.choice = choice
@@ -28,9 +31,9 @@ local function CreateRollButton(parent, choice, rollType, texture)
 end
 
 -- Private frame construction: no globally named XML templates or mixins.
-function app.CreateRollFrame(parent, name)
+function internal.CreateRollFrame(parent, name)
     local frame = CreateFrame("Frame", name, parent)
-    Mixin(frame, app.RollFrameMixin)
+    Mixin(frame, internal.RollFrameMixin)
     frame:Hide()
     frame:SetSize(277, 67)
     local background = frame:CreateTexture(nil, "BACKGROUND", nil)

@@ -1,15 +1,16 @@
----@type string, BetterGroupLoot
-local _, app = ...
+local lib = LibStub("BetterGroupLoot-1.0")
+local internal = lib.internal
+if not internal.loading then
+    return
+end
 
-local log = app.logger
-
--- The one place that talks to the game's loot API. The roll frames (src/rolls/) only use app.api
+-- The one place that talks to the game's loot API. The roll frames (rolls/) only use internal.api
 -- and the plain tables described below, so supporting another client means adding one file next
--- to forever.lua that provides the same functions, and listing it in the TOC.
+-- to forever.lua that provides the same functions, and listing it in BetterGroupLoot-1.0.xml.
 --
 -- Each client file decides at load time whether it fits the running client (by checking for the
 -- API it needs and any client restrictions) and hands its functions to api:Implement(). The
--- first file that fits wins; api.client names it. None fitting leaves the addon inactive.
+-- first file that fits wins; api.client names it. None fitting leaves the library inactive.
 
 ---@alias BetterGroupLoot.Choice "need"|"greed"|"transmog"|"disenchant"|"pass"|"undecided"
 
@@ -71,7 +72,7 @@ local log = app.logger
 ---@field IsRollUIActive fun(): boolean false when the client shows rolls in a UI we don't replace (gamepad mode)
 ---@field HideBlizzardRollFrames fun() stop the client's own roll frames from showing
 local api = {}
-app.api = api
+internal.api = api
 
 -- The rollType argument of Roll(); the same numbers on every client so far.
 api.RollType = {
@@ -120,12 +121,12 @@ function api:Implement(client, impl)
     end
     for _, name in ipairs(REQUIRED) do
         if type(impl[name]) ~= "function" then
-            log:error("The %s loot API is missing %s", client, name)
+            internal.logger:error("The %s loot API is missing %s", client, name)
             return
         end
     end
     if type(impl.events) ~= "table" then
-        log:error("The %s loot API is missing its events", client)
+        internal.logger:error("The %s loot API is missing its events", client)
         return
     end
     for key, value in pairs(impl) do

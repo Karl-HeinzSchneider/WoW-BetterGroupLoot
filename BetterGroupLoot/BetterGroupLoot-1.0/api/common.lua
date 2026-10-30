@@ -1,8 +1,11 @@
----@type string, BetterGroupLoot
-local _, app = ...
+local lib = LibStub("BetterGroupLoot-1.0")
+local internal = lib.internal
+if not internal.loading then
+    return
+end
 
 -- Shared roll operations; history and frame suppression remain client-specific.
-function app.api.CreateImplementation()
+function internal.api.CreateImplementation()
     local impl = {}
     local function ineligibleReason(allowed, code)
         if allowed or not code then

@@ -1,89 +1,110 @@
-# Embedding BetterGroupLoot
+# Embedding BetterGroupLoot-1.0
 
-The addon has two XML entry points inside its single `BetterGroupLoot/` folder:
+The roll frames are a LibStub library, `BetterGroupLoot-1.0`, in
+`BetterGroupLoot/BetterGroupLoot-1.0/`. The standalone BetterGroupLoot addon is one host of it;
+any other addon can be another. The library is self-contained: its only dependency, LibStub,
+ships in its own `lib/`, and it uses nothing from the host's private table.
 
-- `standalone.xml`: used by BetterGroupLoot.toc. Loads dependencies, the private
-  LibEditMode, standalone database/options, shared code and automatic startup.
-- `embedded.xml`: reusable client adapters, frame/controller code and optional
-  Edit Mode registration helpers. Loads no libraries or standalone bootstrap.
+## Setup
 
-Vendor the addon directory at a pinned commit and include its `embedded.xml` from
-an XML file in the host addon. Relative script paths resolve against the imported
-XML's directory. Supply the same host-private table to every imported shared file.
-Do not import standalone.xml in an embedded host.
+1. Copy `BetterGroupLoot/BetterGroupLoot-1.0/` into the host, at a pinned commit (for example to
+   `libs/BetterGroupLoot-1.0/`). Copy it whole: its `LICENSE` (MIT) must ship with every copy, and
+   its `AGENTS.md` says where the library comes from and who made it. Keeping that file and
+   crediting BetterGroupLoot in the host is appreciated.
+2. Include it from the host's XML or TOC, like any other library:
 
-Before loading the API files, provide `app.logger` with `debug`, `error` and `chat`
-methods accepting format strings. Optionally provide `app.rollStrings` before loading
-rollframe.lua: a complete table with `need`, `greed`, `transmog`, `disenchant`, `pass`,
-`undecided`, `offSpec`, `noData` and `nobody` text. The host owns localization.
-Libraries needed at runtime are LibStub and AceEvent-3.0 (and its dependencies).
+   ```xml
+   <Include file="libs\BetterGroupLoot-1.0\BetterGroupLoot-1.0.xml" />
+   ```
 
-After the host database is available, explicitly start the controller:
+   Loading does nothing: no frames, events, hooks or globals besides LibStub's entry.
 
-```lua
-local controller, owner = app.StartGroupLoot({
-    prefix = "SeamlessUIGroupLoot",
-    getProfile = function() return app.db.profile end,
-    defaultPosition = { x = 600, y = 420 },
-    changed = function() RefreshHostOptions() end,
-    moverText = L["Drag to move, right-click to lock"],
-})
-if not controller then
-    -- Show host-localized status using owner.prefix or owner.reason.
-    return
-end
-```
+3. Start it from a small wrapper once the host's saved settings are available:
 
-The call checks `BetterGroupLootRuntimeOwner` before host validation, client checks,
-frame creation, event registration or override installation. First startup wins,
-regardless of version or whether it is standalone. A later copy returns `nil, owner`;
-it must not use the owner's controller. Repeating startup on the owning private
-app table returns/restarts its existing controller. An unsupported client returns
-`nil, { reason = "unsupported" }` without reserving ownership.
+   ```lua
+   local BGL = LibStub("BetterGroupLoot-1.0")
 
-The owner record has `prefix`, protocol `version = 1`, `reason = "owned"`, and the
-controller after initialization. This version identifies the ownership protocol;
-it is not permission to replace an older implementation. Startup failures retain
-the reservation because partially created UI or installed hooks cannot be undone
-reliably. Recovery requires reload.
+   local controller, owner = BGL:Start({
+       name = "SeamlessUIGroupLoot",
+       logger = app.logger,
+       getProfile = function() return app.db.profile.groupLoot end,
+       strings = L.groupLoot,
+       changed = function() RefreshHostOptions() end,
+   })
+   if not controller then
+       -- Show host-localized status using owner.prefix or owner.reason.
+       return
+   end
+   ```
 
-Only implementations using this protocol cooperate. Older standalone releases and
-unrelated loot replacement addons cannot be detected reliably by this marker.
+Merge `BGL.defaults` into the host's own defaults for the table `getProfile` returns, for
+example `defaults.profile.groupLoot = CopyTable(BGL.defaults)` with AceDB.
 
-The prefix must be a valid global identifier and unique to the host. It names
-`<prefix>Anchor` and pooled `<prefix>RollFrame1`, `RollFrame2`, etc. Children and
-mixins are private. No frames are created at shared-file load time.
+## Start options
 
-The getter must resolve the current profile every time. The default position path
-uses `position.x`, `position.y` (UIParent units), `scale`, `spacing`, `growUp` and
-`showUndecided`, preserving the standalone schema. A host with its own positioning
-service supplies all three callbacks `applyPosition(anchor)`, `savePosition(anchor)`
-and `resetPosition(anchor)` instead; applyPosition also owns scale in that case.
-The host still provides spacing/growUp/showUndecided through getProfile.
+Only `name` is required.
 
-Use `controller:OnProfileRefresh()` after profile switches, `ApplySettings()` after
-layout changes, `SetUnlocked(boolean)` for the legacy mover/previews, and
-`ShowPreviews()` / `HidePreviews()` when the host owns preview visibility. Edit Mode
-registration is optional: starting the runtime does not register anything or load a library.
-The optional `src/rolls/editmode.lua` extends the controller with the methods below.
+- `name`: the host. It is the log tag of the default logger and the frame prefix: `<prefix>Anchor`
+  and pooled `<prefix>RollFrame1`, `RollFrame2`, etc. Children and mixins are private.
+- `prefix`: the frame prefix when `name` is not a valid global identifier. It must be unique to the
+  host.
+- `logger`: an object with `debug`, `error` and `chat` methods that take format strings. Without
+  it, the library creates the standard logger with `BGL:CreateLogger(name)`. The host can also
+  use `BGL:CreateLogger` for its own logging, as the standalone addon does.
+- `getProfile`: returns the current settings and is called every time, so profile switches just
+  work. It uses `position.x`, `position.y` (UIParent units), `scale`, `spacing`, `growUp` and
+  `showUndecided` (see `BGL.defaults`). Without it, the library uses an unsaved copy of the
+  defaults.
+- `defaultPosition`: `{ x, y }` reset position. The default is `BGL.defaults.position`.
+- `applyPosition(anchor)`, `savePosition(anchor)`, `resetPosition(anchor)`: a host with its own
+  positioning service supplies all three instead. `applyPosition` then also owns the scale, and
+  the host still provides spacing/growUp/showUndecided through `getProfile`.
+- `strings`: overrides for the tooltip text: `need`, `greed`, `transmog`, `disenchant`, `pass`,
+  `undecided`, `offSpec`, `noData` and `nobody`. The defaults use the client's global strings
+  where they exist. The host owns localization.
+- `moverText`: label of the legacy unlock mover.
+- `changed()`: called when a setting changed inside the library (dragged, unlocked, Edit Mode).
 
-On disable call `controller:Stop()`. It unregisters events, releases all rolls and
-previews and makes the installed secure hooks inert, allowing Blizzard frames again.
-Ownership remains reserved until reload; restart through StartGroupLoot. WoW secure
-post-hooks cannot be removed safely, so there is no live handover between copies.
+## Ownership
 
-Manual validation: compare the original layout in game, roll all supported choices,
-check tooltips/counts, drag at different scales, switch/reset profiles, reload during
-active rolls and exercise both host startup orders. Existing saved settings remain
-unchanged.
+Only one copy can replace the client's roll frames, because secure post-hooks can't be removed.
+The first `Start` in a UI session wins, whatever its version and whether it is standalone. Any
+later host gets `nil, owner` and nothing is created for it; it must not use the owner's
+controller. The owner calling `Start` again (with the same prefix) gets its controller back,
+restarted after `Stop`. An unsupported client returns `nil, { reason = "unsupported" }` without
+reserving ownership. `BGL:GetOwner()` returns the record at any time.
+
+The owner record has `prefix`, protocol `version = 1`, the library `minor`, `reason = "owned"`, and
+the controller after initialization. It is also stored in the global
+`BetterGroupLootRuntimeOwner`, so the library cooperates with releases from before it. Startup
+failures keep the reservation, because partially created UI or installed hooks can't be undone
+reliably; recovery requires a reload.
+
+All hosts share one copy of the code: LibStub keeps the newest minor version that has loaded.
+A newer copy replaces an older one only while nobody has started it. Once started, the library is
+never upgraded, and a newer copy loading later (a load-on-demand addon) stays out.
+
+## Controller
+
+Use `controller:OnProfileRefresh()` after profile switches, `ApplySettings()` after layout changes,
+`SetUnlocked(boolean)` for the legacy mover/previews, `ResetPosition()`, and
+`ShowPreviews()` / `HidePreviews()` when the host owns preview visibility.
+
+On disable call `controller:Stop()`. It unregisters events, releases all rolls and previews and
+makes the installed secure hooks inert, so the client's frames work again. Ownership remains
+reserved until reload; restart through `Start`. There is no live handover between hosts.
+
+Manual validation: compare the original layout in game, roll all supported choices, check
+tooltips/counts, drag at different scales, switch/reset profiles, reload during active rolls and
+exercise both host startup orders. Existing saved settings remain unchanged.
 
 ## Optional Edit Mode registration
 
-`standalone.xml` loads the same namespaced LibEditMode revision 18 used by Seamless
+The standalone addon's `standalone.xml` loads the same namespaced LibEditMode revision 18 used by Seamless
 from `lib/LibEditMode/`. Its vendored files are unmodified. Edit Mode is part of the
 supported client contract; standalone registration uses the library directly after
 winning runtime ownership. There is no capability-probing or addon-loading flow.
-Embedded hosts import `embedded.xml` and provide their own library when registering.
+Embedding hosts provide their own LibEditMode when registering; the library never looks one up.
 
 With a compatible library supplied by the host, register one custom frame explicitly:
 
@@ -126,7 +147,8 @@ Options:
   create or remove its preview stack. The standalone mover is still hidden in Edit Mode.
 - `defaults`, `strings` and `omitScale`: forwarded to `GetEditModeSettings` when
   using the default settings. Strings may override `scale`, `spacing`, `growUp`,
-  `showUndecided` and their corresponding `<key>Description` labels.
+  `showUndecided` and their corresponding `<key>Description` labels. `defaults` (the
+  rows' reset values) falls back to `BGL.defaults`.
 
 For Seamless, supply Core's private library and compose the settings with Core's
 extended Position section. The same helper can be used without RegisterEditMode if

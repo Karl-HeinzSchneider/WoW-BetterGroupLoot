@@ -31,7 +31,10 @@ ignore:
   # Claude Code guidance: the root one and the one in every addon.
   - CLAUDE.md
   - "*/CLAUDE.md"
-  # Any other Markdown, at any depth.
-  - "*.md"
+  # Other Markdown, listed one by one: BetterGroupLoot/BetterGroupLoot-1.0/AGENTS.md ships, so that
+  # a copy of the library taken from an installed addon keeps its origin and credit notes.
+  - README.md
+  - REWORK_NOTES.md
+  - BetterGroupLoot/lib/LibEditMode/CHANGELOG.md
   # LuaLS annotation files; no TOC loads them.
   - BetterGroupLoot/src/types.lua

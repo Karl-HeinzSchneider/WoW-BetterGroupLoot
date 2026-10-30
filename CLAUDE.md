@@ -11,7 +11,7 @@ links and packages it.
 
 | Part               | What it is                                                                                                                          | Details                                                |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `BetterGroupLoot/` | The addon: everything in it ships. Settings in `BetterGroupLootDB`.                                                                 | [BetterGroupLoot/CLAUDE.md](BetterGroupLoot/CLAUDE.md) |
+| `BetterGroupLoot/` | The addon: everything in it ships. Settings in `BetterGroupLootDB`. Contains the `BetterGroupLoot-1.0` library other addons embed.  | [BetterGroupLoot/CLAUDE.md](BetterGroupLoot/CLAUDE.md) |
 | `src/`             | Root tooling (Node 20+, TypeScript run by `tsx`, no build): check the addons, link them into a client, package them. Never shipped. | see "Tooling" below                                    |
 | `.github/`         | The release workflows (BigWigs packager).                                                                                           | see "Releases" below                                   |
 
@@ -41,12 +41,13 @@ WoW addons are plain Lua/XML files loaded by the game; there is no build step. T
 | `npm run package:addons`           | Deterministic `dist/BetterGroupLoot-<version>.zip` of all addons (gitignored), without `CLAUDE.md` files.                                                                                                                           |
 | `npm run package:local`            | The BigWigs packager the release workflows use (`.pkgmeta`), run locally without uploading: addon folders and zip in `.release/` (gitignored). Extra `release.sh` options go after `--`. On Windows it needs Git for Windows' bash. |
 
-Static checks also used ad hoc: `lua-language-server --check` (config in `.luarc.json`; `lib/` is
-excluded from LuaLS, StyLua and Prettier).
+Static checks also used ad hoc: `lua-language-server --check` (config in `.luarc.json`; both
+vendored `lib/` folders, the addon's and the library's, are excluded from LuaLS, StyLua and Prettier).
 
-`npm run check:compat` runs the offline client-adapter regressions in `tests/compat.lua`, `tests/editmode.lua` (including the runtime fixture), and
+`npm run check:compat` runs the offline client-adapter regressions in `tests/compat.lua`, `tests/editmode.lua` (including the runtime fixture in `tests/runtime.lua`), and
 `tests/editmode-library.lua` and XML load-graph tests in `tests/entrypoints.lua`
-(Lua 5.1 on PATH); it is also included in `npm run check`. Tests never ship in the package.
+(Lua 5.1 on PATH); it is also included in `npm run check`. `tests/library.lua` loads the library
+from its XML for the other tests, optionally as another minor version. Tests never ship in the package.
 
 ## Tooling (`src/`)
 
@@ -80,7 +81,7 @@ repository secrets `CF_API_KEY`, `WAGO_API_TOKEN`, `WOWI_API_TOKEN` and the proj
   files; every code file must be listed in its addon's TOC, in dependency order, or it will not
   load.
 - Addons share one global namespace. Keep state in the private table passed to each file. A file
-  that uses it starts with
+  of the standalone addon (`BetterGroupLoot/src/`) that uses it starts with
 
   ```lua
   ---@type string, BetterGroupLoot
@@ -91,9 +92,14 @@ repository secrets `CF_API_KEY`, `WAGO_API_TOKEN`, `WOWI_API_TOKEN` and the proj
   language server completion on `app.*`. When a file adds a member to `app`, add a matching
   `---@field` to `BetterGroupLoot/src/types.lua`.
 
-- The sanctioned globals are SavedVariables, host-prefixed public anchor/roll frames, and
-  `BetterGroupLootRuntimeOwner`, the cooperative singleton shared by embedded copies.
-  Frame mixins remain private; never replace an existing runtime owner.
+  Library files (`BetterGroupLoot/BetterGroupLoot-1.0/`) never use `...`: inside a host it is the
+  host's table. They start with the LibStub header described in `BetterGroupLoot-1.0/core.lua`
+  and share state through `lib.internal` (`tests/entrypoints.lua` enforces it).
+
+- The sanctioned globals are SavedVariables, LibStub's `BetterGroupLoot-1.0`, host-prefixed
+  public anchor/roll frames, and `BetterGroupLootRuntimeOwner`, the ownership record that also
+  cooperates with releases from before the library. Frame mixins remain private; never replace
+  an existing runtime owner.
 - Persistent state lives only in tables declared via `## SavedVariables`; they are populated after
   `ADDON_LOADED`, not at file-load time (AceDB `OnInitialize` is the first safe place).
 - Ace3 types (`AceAddon`, `AceDBObject-3.0`, `AceDB.Schema`, …) come from the `ketho.wow-api`
@@ -108,6 +114,14 @@ report errors. Schema validation comes from `xml.fileAssociations` in `.vscode/s
 (mapping `**/*.xml` to `../_data/BlizzardInterfaceCode/.../Blizzard_SharedXML/UI.xsd`) and from
 `npm run check:xml`. Lua mixin files must be listed in the TOC _before_ the XML that references
 them.
+
+## Line endings
+
+Every text file uses LF, in the repository and in the working tree. `.gitattributes`
+(`* text=auto eol=lf`) overrides `core.autocrlf` (true system-wide in Git for Windows);
+`.editorconfig`, VS Code's `files.eol`, Prettier (`endOfLine`) and StyLua (`line_endings`) write
+LF. Binary types (`.tga`, `.blp`, `.png`, `.jpg`, `.zip`) are marked `binary` there; add a new
+binary type to `.gitattributes` before committing it.
 
 ## Files with backslashes
 
@@ -150,11 +164,20 @@ Never list anything from these folders in a TOC or copy files out of them into t
   this client before depending on it.
 - A screenshot the user shares is a look reference, not a template to reproduce pixel by pixel.
 
-## Standalone and embedded entry points
+## The library and the standalone addon
 
-This repository ships one addon folder. BetterGroupLoot.toc loads standalone.xml,
-which loads dependencies and the private LibEditMode, then the standalone core,
-embedded.xml's shared code, and standalone startup. Embedded hosts import only
-embedded.xml and provide their own libraries, logger and startup/registration.
-Edit Mode is a supported-client requirement; do not add capability probes or
-separate loader addons. Keep vendored LibEditMode revision 18 unmodified.
+This repository defines the `BetterGroupLoot-1.0` LibStub library and ships one addon folder that
+contains it. `BetterGroupLoot/BetterGroupLoot-1.0/` is self-contained (its only dependency,
+LibStub, lives in its own `lib/`) and does nothing until a host calls `lib:Start(options)`.
+Another addon copies that folder, includes `BetterGroupLoot-1.0.xml` and calls Start from its own
+wrapper; see [docs/embedding.md](docs/embedding.md).
+
+BetterGroupLoot.toc loads standalone.xml: the library first, then Ace3 and the private
+LibEditMode, then the standalone addon (`src/`), which is a host like any other: it starts the
+library with its AceDB profile and its logger. Nothing in the library may depend on `src/`.
+
+Within 1.0, Start's options and the controller's methods stay backward compatible (a newer minor
+replaces an older one before anything starts); bump `MINOR` in `core.lua` with every change to the
+library. A breaking change is `BetterGroupLoot-2.0`, which must keep honoring
+`BetterGroupLootRuntimeOwner`. Edit Mode is a supported-client requirement; do not add capability
+probes or separate loader addons. Keep vendored LibEditMode revision 18 unmodified.

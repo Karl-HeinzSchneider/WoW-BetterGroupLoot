@@ -3,6 +3,14 @@ local function equal(actual, expected)
     assert(actual == expected, tostring(actual) .. " ~= " .. tostring(expected))
 end
 
+local library = dofile("tests/library.lua")
+local testLogger = {
+    error = function(_, message)
+        error(message)
+    end,
+    debug = function() end,
+}
+
 local function loadAddon(project, interface, history)
     WOW_PROJECT_MAINLINE = 1
     WOW_PROJECT_ID = project
@@ -10,18 +18,15 @@ local function loadAddon(project, interface, history)
     GetBuildInfo = function()
         return "", "", "", interface
     end
-    local app = {
-        logger = {
-            error = function(_, message)
-                error(message)
-            end,
-            debug = function() end,
-        },
-    }
-    for _, file in ipairs({ "api", "common", "classic", "forever" }) do
-        assert(loadfile("BetterGroupLoot/src/api/" .. file .. ".lua"))("BetterGroupLoot", app)
-    end
-    return app.api
+    library.reset()
+    local lib = library.load({
+        after = function(path, lib)
+            if path:match("/logger%.lua$") then
+                lib.internal.logger = testLogger
+            end
+        end,
+    })
+    return lib.internal.api
 end
 
 GetLootRollItemInfo = function(id)

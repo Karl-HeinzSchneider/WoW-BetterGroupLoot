@@ -1,6 +1,8 @@
 ---@type string, BetterGroupLoot
 local appName, app = ...
 
+-- The library's standard logger, also handed to it on Start.
+app.logger = LibStub("BetterGroupLoot-1.0"):CreateLogger(appName)
 local log = app.logger
 
 ---@class BetterGroupLoot.Addon : AceAddon, AceConsole-3.0, AceEvent-3.0

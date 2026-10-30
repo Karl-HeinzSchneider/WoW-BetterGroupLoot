@@ -1,0 +1,15 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <!-- The whole library. Self-contained: needs nothing from the host and does nothing until Start. -->
+    <Script file="lib\LibStub\LibStub.lua" />
+    <Script file="core.lua" />
+    <Script file="logger.lua" />
+    <Script file="api\api.lua" />
+    <Script file="api\common.lua" />
+    <Script file="api\classic.lua" />
+    <Script file="api\forever.lua" />
+    <Script file="rolls\rollframe.lua" />
+    <Script file="rolls\frames.lua" />
+    <Script file="rolls\rolls.lua" />
+    <Script file="rolls\editmode.lua" />
+    <Script file="rolls\runtime.lua" />
+</Ui>

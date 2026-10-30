@@ -12,17 +12,12 @@ C_Item = {
 }
 
 local function newController(prefix)
-    BetterGroupLootRuntimeOwner = nil
-    local app = fixture.copy(true)
-    app.api.client = "forever"
-    app.api.NewChoices = function()
-        return { need = {}, greed = {}, transmog = {}, disenchant = {}, pass = {}, undecided = {} }
-    end
-    assert(loadfile("BetterGroupLoot/src/rolls/editmode.lua"))("Test", app)
+    local lib = fixture.fresh(true)
+    lib.internal.api.client = "forever"
     local profile = { position = { x = 600, y = 420 }, scale = 1, spacing = 8, growUp = true, showUndecided = true }
     local changed = 0
-    local controller = assert(app.StartGroupLoot({
-        prefix = prefix,
+    local controller = assert(lib:Start({
+        name = prefix,
         getProfile = function()
             return profile
         end,
@@ -223,15 +218,22 @@ local fakeController = {
         self.active = false
     end,
 }
-local app = {
-    addon = addon,
-    LibEditMode = lib,
-    StartGroupLoot = function()
+local app
+local starter = {
+    Start = function(_, options)
+        assert(options.name == "BetterGroupLoot" and options.logger and options.getProfile() == app.db.profile)
         starts = starts + 1
         fakeController.active = true
         return fakeController
     end,
-    dbDefaults = { profile = { position = {} } },
+}
+LibStub = function(name)
+    assert(name == "BetterGroupLoot-1.0")
+    return starter
+end
+app = {
+    addon = addon,
+    LibEditMode = lib,
     db = { profile = {} },
     logger = { chat = function() end },
 }
@@ -246,7 +248,7 @@ combat = false
 standalone:RegisterEditMode()
 assert(registerCount == 2)
 standalone:OnDisable()
-app.StartGroupLoot = function()
+starter.Start = function()
     return nil, { prefix = "OtherHost" }
 end
 standalone:OnEnable()

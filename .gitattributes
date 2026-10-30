@@ -1,2 +1,10 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Every text file uses LF, in the repository and in every checkout, whatever core.autocrlf says
+# (Git for Windows sets it to true system-wide). The WoW client reads LF files fine.
+* text=auto eol=lf
+
+# Binary: never converted.
+*.tga binary
+*.blp binary
+*.png binary
+*.jpg binary
+*.zip binary

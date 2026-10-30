@@ -1,13 +1,13 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/">
-    <!-- Standalone dependencies and private Edit Mode library. -->
+    <!-- The library first (it brings LibStub), then the standalone addon's own libraries. -->
+    <Include file="BetterGroupLoot-1.0\BetterGroupLoot-1.0.xml" />
     <Include file="embeds.xml" />
     <Script file="lib\LibEditMode\namespaced.lua" />
     <Include file="lib\LibEditMode\embed.xml" />
-    <Script file="src\core\logger.lua" />
+    <!-- The standalone addon: a host of the library like any other. -->
     <Script file="src\core\db.lua" />
     <Script file="src\core\ace.lua" />
     <Script file="src\core\options.lua" />
-    <Include file="embedded.xml" />
     <Script file="src\core\standalone.lua" />
     <Script file="BetterGroupLoot.lua" />
 </Ui>

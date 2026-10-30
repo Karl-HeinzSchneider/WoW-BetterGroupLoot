@@ -1,18 +1,19 @@
----@type string, BetterGroupLoot
-local _, app = ...
+local lib = LibStub("BetterGroupLoot-1.0")
+local internal = lib.internal
+if not internal.loading then
+    return
+end
 
 -- WoW Forever (1.6, a client of the retail family). Rolls work as on every client
 -- (START_LOOT_ROLL, GetLootRollItemInfo, RollOnLoot), but who chose what lives in the
 -- encounter-based loot history (C_LootHistory.GetSortedDropsForEncounter), which knows nothing
 -- about rollIDs; findDrop() pairs the two up.
 local _, _, _, interface = GetBuildInfo()
-if interface ~= 16001 or app.api.client or not (C_LootHistory and C_LootHistory.GetSortedDropsForEncounter) then
+if interface ~= 16001 or internal.api.client or not (C_LootHistory and C_LootHistory.GetSortedDropsForEncounter) then
     return
 end
 
-local log = app.logger
-
-local impl = app.api.CreateImplementation()
+local impl = internal.api.CreateImplementation()
 
 impl.events = {
     rollStarted = "START_LOOT_ROLL",
@@ -116,14 +117,14 @@ function impl.GetRollChoices(rollID)
         dropByRoll[rollID] = ref
         drop = ref and C_LootHistory.GetSortedInfoForDrop(ref.encounterID, ref.lootListKey)
         if drop then
-            log:debug("Roll %d is loot history drop %d:%d", rollID, ref.encounterID, ref.lootListKey)
+            internal.logger:debug("Roll %d is loot history drop %d:%d", rollID, ref.encounterID, ref.lootListKey)
         end
     end
     if not drop then
         return nil
     end
 
-    local choices = app.api.NewChoices()
+    local choices = internal.api.NewChoices()
     for _, info in ipairs(drop.rollInfos or {}) do
         local choice = choiceByState[info.state]
         if choice then
@@ -175,4 +176,4 @@ function impl.HideBlizzardRollFrames(isActive)
     end)
 end
 
-app.api:Implement("forever", impl)
+internal.api:Implement("forever", impl)

@@ -1,4 +1,4 @@
--- Two independently loaded copies must cooperate before any UI or hooks are installed.
+-- Every copy of the library must cooperate before any UI or hooks are installed.
 local function noop() end
 local created, hooks, events = 0, 0, 0
 local function region(parent, name)
@@ -55,6 +55,14 @@ local function region(parent, name)
                     return region(self)
                 end
             end
+            if key == "RegisterEvent" then
+                return function()
+                    events = events + 1
+                end
+            end
+            if key == "UnregisterAllEvents" then
+                return noop
+            end
             if key == "SetScript" then
                 return function(self, script, callback)
                     self.scripts[script] = callback
@@ -100,83 +108,95 @@ function CreateObjectPool(create, reset)
         end,
     }
 end
-function LibStub(name)
-    assert(name == "AceEvent-3.0")
-    return {
-        Embed = function(_, target)
-            target.RegisterEvent = function()
-                events = events + 1
-            end
-            target.UnregisterAllEvents = noop
-        end,
-    }
+function wipe(t)
+    for key in pairs(t) do
+        t[key] = nil
+    end
+    return t
+end
+GetBuildInfo = function()
+    return "", "", "", 0
 end
 GameTooltip = {
     IsOwned = function()
         return false
     end,
 }
-local function copy(supported)
-    local app = { logger = { debug = noop, chat = noop } }
-    app.api = {
-        IsSupported = function()
-            return supported
-        end,
-        HideBlizzardRollFrames = function(active)
-            hooks = hooks + 1
-            app.hookActive = active
-        end,
-        events = { rollStarted = "START", rollCancelled = "CANCEL", choicesChanged = { "CHOICES" } },
-        GetActiveRolls = function()
-            return {}
-        end,
-        IsRollUIActive = function()
-            return true
-        end,
-        GetRollItem = function()
-            return { count = 1, quality = 4, name = "Item", canGreed = true }
-        end,
-        GetRollChoices = function()
-            return nil
-        end,
-        GetRollTimeLeft = function()
-            return 1000
-        end,
-        GetQualityBorderAtlas = function()
-            return "border"
-        end,
-        GetQualityColor = function()
-            return 1, 1, 1
-        end,
-        ForgetRoll = noop,
-    }
-    for _, file in ipairs({ "rollframe", "frames", "rolls", "runtime" }) do
-        assert(loadfile("BetterGroupLoot/src/rolls/" .. file .. ".lua"))("Test", app)
+
+local library = dofile("tests/library.lua")
+
+-- Stands in for a client adapter, so the controller runs without a game.
+local function inject(lib, supported)
+    local api = lib.internal.api
+    api.client = supported and "test" or nil
+    api.HideBlizzardRollFrames = function(active)
+        hooks = hooks + 1
+        lib.hookActive = active
     end
-    return app
+    api.events = { rollStarted = "START", rollCancelled = "CANCEL", choicesChanged = { "CHOICES" } }
+    api.GetActiveRolls = function()
+        return {}
+    end
+    api.IsRollUIActive = function()
+        return true
+    end
+    api.GetRollItem = function()
+        return { count = 1, quality = 4, name = "Item", canGreed = true }
+    end
+    api.GetRollChoices = function()
+        return nil
+    end
+    api.GetRollTimeLeft = function()
+        return 1000
+    end
+    api.GetQualityBorderAtlas = function()
+        return "border"
+    end
+    api.GetQualityColor = function()
+        return 1, 1, 1
+    end
+    api.ForgetRoll = noop
+    return lib
 end
+
+-- The library in a new UI session.
+local function fresh(supported)
+    library.reset()
+    return inject(library.load(), supported)
+end
+
 local profile = { position = { x = 600, y = 420 }, scale = 1, spacing = 8, growUp = true }
-local function host(prefix)
+local function host(name)
     return {
-        prefix = prefix,
+        name = name,
         getProfile = function()
             return profile
         end,
         defaultPosition = { x = 600, y = 420 },
     }
 end
-local first, second = copy(true), copy(true)
+
+-- Loading does nothing: no frames, hooks, events or globals until a host starts it.
+local lib = fresh(true)
 assert(created == 0 and hooks == 0 and events == 0)
 assert(BetterGroupLootRollFrameMixin == nil and BetterGroupLootRollButtonMixin == nil)
-local controller = assert(first.StartGroupLoot(host("SeamlessUIGroupLoot")))
+assert(BetterGroupLootRuntimeOwner == nil and lib:GetOwner() == nil and lib.internal.loading == nil)
+local controller = assert(lib:Start(host("SeamlessUIGroupLoot")))
 assert(controller.anchor.name == "SeamlessUIGroupLootAnchor")
-assert(hooks == 1 and events == 4 and first.hookActive())
+assert(hooks == 1 and events == 4 and lib.hookActive())
+assert(lib:GetOwner() == BetterGroupLootRuntimeOwner and BetterGroupLootRuntimeOwner.controller == controller)
 local before = created
-local other, owner = second.StartGroupLoot(nil)
+-- Another host gets nothing; nothing is created for it.
+local other, owner = lib:Start(host("BetterGroupLoot"))
 assert(other == nil and owner.prefix == "SeamlessUIGroupLoot")
 assert(created == before and hooks == 1 and events == 4)
--- A repeat start is idempotent and never recreates the UI.
-assert(first.StartGroupLoot(host("Ignored")) == controller)
+-- A started library is never upgraded, by a copy of the same or a newer version.
+local internal = lib.internal
+assert(library.load() == lib and lib.internal == internal and internal.loading == nil)
+assert(library.load({ minor = 99 }) == lib and lib.minor == 1 and lib.internal == internal)
+assert(lib:Start(host("BetterGroupLoot")) == nil)
+-- The owner starting again is idempotent and never recreates the UI.
+assert(lib:Start(host("SeamlessUIGroupLoot")) == controller)
 assert(created == before and hooks == 1)
 controller:AddRoll(7, 1000)
 assert(#controller.frames == 1)
@@ -189,40 +209,70 @@ profile = { position = { x = 12, y = 34 }, scale = 2, spacing = 1 }
 assert(controller:GetProfile() == profile)
 controller:OnProfileRefresh()
 controller:Stop()
-assert(not first.hookActive() and #controller.frames == 0)
-assert(second.StartGroupLoot(host("BetterGroupLoot")) == nil)
-assert(first.StartGroupLoot(host("Ignored")) == controller)
+assert(not lib.hookActive() and #controller.frames == 0)
+assert(lib:Start(host("BetterGroupLoot")) == nil)
+assert(lib:Start(host("SeamlessUIGroupLoot")) == controller)
 -- The API installs a hook once; its predicate follows active state on restart.
-assert(first.hookActive())
+assert(lib.hookActive())
 controller:Stop()
--- Also exercise the reverse load order in a fresh UI session.
-BetterGroupLootRuntimeOwner = nil
-local standalone = copy(true)
-assert(standalone.StartGroupLoot(host("BetterGroupLoot")))
-assert(copy(true).StartGroupLoot(host("OtherHost")) == nil)
-BetterGroupLootRuntimeOwner = nil
-local count = created
-local unsupported, reason = copy(false).StartGroupLoot(host("Unsupported"))
-assert(unsupported == nil and reason.reason == "unsupported")
-assert(BetterGroupLootRuntimeOwner == nil and created == count)
 print("Runtime ownership, isolated frames, pooling, profiles and lifecycle passed")
 
--- Invalid and failed startup must never let another copy take over partial UI.
+-- Before any Start, a newer copy replaces the code; an older one stays out.
+lib = fresh(true)
+assert(library.load({ minor = 2 }) == lib and lib.minor == 2 and lib.internal.loading == nil)
+local upgraded = lib.internal
+assert(library.load() == lib and lib.minor == 2 and lib.internal == upgraded and upgraded.loading == nil)
+inject(lib, true)
+assert(lib:Start(host("Upgraded")).anchor.name == "UpgradedAnchor")
+assert(lib:GetOwner().minor == 2)
+-- An older release that predates the library still owns the frames through the global.
+lib = fresh(true)
+BetterGroupLootRuntimeOwner = { prefix = "OldRelease", version = 1, reason = "owned" }
+local blocked, legacy = lib:Start(host("BetterGroupLoot"))
+assert(blocked == nil and legacy.prefix == "OldRelease")
+-- An unsupported client reserves nothing.
+lib = fresh(false)
+local count = created
+local unsupported, reason = lib:Start(host("Unsupported"))
+assert(unsupported == nil and reason.reason == "unsupported")
+assert(BetterGroupLootRuntimeOwner == nil and created == count)
+print("Library versions, upgrades and legacy ownership passed")
+
+-- Only a name is required: settings default to an unsaved copy of lib.defaults, the logger to
+-- the standard one; a host's logger and strings are used as given.
+lib = fresh(true)
+local minimal = assert(lib:Start({ name = "Minimal" }))
+assert(minimal:GetProfile().spacing == lib.defaults.spacing and minimal:GetProfile() ~= lib.defaults)
+assert(minimal:GetProfile().position ~= lib.defaults.position)
+assert(minimal.logger.prefix:find("Minimal", 1, true) and lib.internal.logger == minimal.logger)
+assert(minimal.strings.nobody == "Nobody yet.")
+lib = fresh(true)
+local hostLogger = { debug = noop, error = noop, chat = noop }
+local custom = host("CustomHost")
+custom.logger = hostLogger
+custom.strings = { need = "Bedarf" }
+local hosted = assert(lib:Start(custom))
+assert(hosted.logger == hostLogger and lib.internal.logger == hostLogger)
+assert(hosted.strings.need == "Bedarf" and hosted.strings.pass == "Pass")
+print("Start defaults, host logger and strings passed")
+
+-- Invalid and failed startup must never let another host take over partial UI.
+lib = fresh(true)
 assert(not pcall(function()
-    copy(true).StartGroupLoot(host("bad-prefix"))
+    lib:Start(host("bad-prefix"))
 end))
-assert(BetterGroupLootRuntimeOwner == nil)
+assert(BetterGroupLootRuntimeOwner == nil and lib:GetOwner() == nil)
 local failing = host("FailedHost")
 failing.getProfile = function()
     error("Profile unavailable")
 end
 assert(not pcall(function()
-    copy(true).StartGroupLoot(failing)
+    lib:Start(failing)
 end))
-local blocked, failedOwner = copy(true).StartGroupLoot(nil)
-assert(blocked == nil and failedOwner.prefix == "FailedHost")
+local denied, failedOwner = lib:Start(host("OtherHost"))
+assert(denied == nil and failedOwner.prefix == "FailedHost")
 assert(failedOwner.controller == nil)
 print("Startup validation and failed-start ownership checks passed")
 
--- Also expose the isolated-copy fixture to the optional Edit Mode integration tests.
-return { copy = copy }
+-- Also expose the fixture to the optional Edit Mode integration tests.
+return { fresh = fresh }

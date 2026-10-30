@@ -1,7 +1,10 @@
----@type string, BetterGroupLoot
-local _, app = ...
+local lib = LibStub("BetterGroupLoot-1.0")
+local internal = lib.internal
+if not internal.loading then
+    return
+end
 
-local controller = app.RollController
+local controller = internal.RollController
 
 local function inCombat()
     return InCombatLockdown and InCombatLockdown()
@@ -9,10 +12,10 @@ end
 
 -- Return ordinary LibEditMode rows so a host can compose them with its own
 -- Position section and footer without registering a second frame or library.
-function controller:GetEditModeSettings(lib, options)
+function controller:GetEditModeSettings(editModeLib, options)
     options = options or {}
     local strings = options.strings or {}
-    local defaults = options.defaults or { scale = 1, spacing = 8, growUp = true, showUndecided = true }
+    local defaults = options.defaults or lib.defaults
     local settings = {}
     local function setting(key, kind, name, desc)
         local row = {
@@ -40,18 +43,23 @@ function controller:GetEditModeSettings(lib, options)
         return row
     end
     if not options.omitScale then
-        local scale = setting("scale", lib.SettingType.Slider, "Scale")
+        local scale = setting("scale", editModeLib.SettingType.Slider, "Scale")
         scale.minValue, scale.maxValue, scale.valueStep = 0.5, 2, 0.05
         scale.formatter = function(value)
             return ("%d%%"):format(math.floor(value * 100 + 0.5))
         end
     end
-    local spacing = setting("spacing", lib.SettingType.Slider, "Spacing", "Gap between two rolls.")
+    local spacing = setting("spacing", editModeLib.SettingType.Slider, "Spacing", "Gap between two rolls.")
     spacing.minValue, spacing.maxValue, spacing.valueStep = 0, 40, 1
-    setting("growUp", lib.SettingType.Checkbox, "Stack upwards", "New rolls appear above the first one. Off: below it.")
+    setting(
+        "growUp",
+        editModeLib.SettingType.Checkbox,
+        "Stack upwards",
+        "New rolls appear above the first one. Off: below it."
+    )
     setting(
         "showUndecided",
-        lib.SettingType.Checkbox,
+        editModeLib.SettingType.Checkbox,
         "List undecided players",
         "The roll buttons' tooltips also list who hasn't chosen yet."
     )
@@ -69,19 +77,19 @@ function controller:RefreshEditMode()
 end
 
 -- Explicit opt-in. Embedded hosts never acquire or load a library implicitly.
-function controller:RegisterEditMode(lib, options)
+function controller:RegisterEditMode(editModeLib, options)
     if self.editMode then
-        assert(self.editMode.library == lib, "Group loot is already registered with another Edit Mode library")
+        assert(self.editMode.library == editModeLib, "Group loot is already registered with another Edit Mode library")
         return self.editMode
     end
     assert(self.active and not inCombat(), "Start group loot outside combat before registering Edit Mode")
     assert(
-        lib
-            and type(lib.AddFrame) == "function"
-            and type(lib.AddFrameSettings) == "function"
-            and type(lib.RegisterCallback) == "function"
-            and type(lib.IsInEditMode) == "function"
-            and type(lib.RefreshFrameSettings) == "function",
+        editModeLib
+            and type(editModeLib.AddFrame) == "function"
+            and type(editModeLib.AddFrameSettings) == "function"
+            and type(editModeLib.RegisterCallback) == "function"
+            and type(editModeLib.IsInEditMode) == "function"
+            and type(editModeLib.RefreshFrameSettings) == "function",
         "A compatible Edit Mode library is required"
     )
     options = options or {}
@@ -93,19 +101,19 @@ function controller:RegisterEditMode(lib, options)
     end
     local settings = options.settings
     if type(settings) == "function" then
-        settings = settings(self, lib)
+        settings = settings(self, editModeLib)
     end
     if settings == nil then
-        settings = self:GetEditModeSettings(lib, options)
+        settings = self:GetEditModeSettings(editModeLib, options)
     end
     local registration = {
-        library = lib,
+        library = editModeLib,
         managePreviews = options.managePreviews ~= false,
         defaultPosition = default,
         followDefaultScale = options.defaultPosition == nil,
     }
     self.editMode = registration
-    lib:AddFrame(self.anchor, function(frame, layout, point, x, y)
+    editModeLib:AddFrame(self.anchor, function(frame, layout, point, x, y)
         if not self.active or inCombat() then
             return
         end
@@ -118,13 +126,13 @@ function controller:RegisterEditMode(lib, options)
     -- The native selection template explicitly uses MEDIUM. Our rolls inherit
     -- DIALOG from the anchor, so match their strata to keep the selection's high
     -- frame level above the roll buttons for mouse selection and dragging.
-    lib.frameSelections[self.anchor]:SetFrameStrata(self.anchor:GetFrameStrata())
-    lib:AddFrameSettings(self.anchor, settings)
+    editModeLib.frameSelections[self.anchor]:SetFrameStrata(self.anchor:GetFrameStrata())
+    editModeLib:AddFrameSettings(self.anchor, settings)
     if options.buttons then
-        lib:AddFrameSettingsButtons(self.anchor, options.buttons)
+        editModeLib:AddFrameSettingsButtons(self.anchor, options.buttons)
     end
     for _, event in ipairs({ "enter", "exit", "layout" }) do
-        lib:RegisterCallback(event, function()
+        editModeLib:RegisterCallback(event, function()
             self:RefreshEditMode()
         end)
     end

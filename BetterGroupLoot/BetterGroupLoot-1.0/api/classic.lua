@@ -1,17 +1,20 @@
----@type string, BetterGroupLoot
-local _, app = ...
+local lib = LibStub("BetterGroupLoot-1.0")
+local internal = lib.internal
+if not internal.loading then
+    return
+end
 
 -- Era/Hardcore/SoD, Anniversary and progression Classic share roll-indexed history.
 -- The exported tree also contains unused mainline files; select the runtime API.
 if
-    app.api.client
+    internal.api.client
     or WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
     or not (C_LootHistory and C_LootHistory.GetNumItems and C_LootHistory.GetItem and C_LootHistory.GetPlayerInfo)
 then
     return
 end
 
-local impl = app.api.CreateImplementation()
+local impl = internal.api.CreateImplementation()
 impl.events = {
     rollStarted = "START_LOOT_ROLL",
     rollCancelled = "CANCEL_LOOT_ROLL",
@@ -37,7 +40,7 @@ function impl.GetRollChoices(rollID)
     for itemIndex = 1, C_LootHistory.GetNumItems() do
         local id, _, numPlayers = C_LootHistory.GetItem(itemIndex)
         if id == rollID then
-            local choices = app.api.NewChoices()
+            local choices = internal.api.NewChoices()
             for playerIndex = 1, numPlayers or 0 do
                 local name, class, rollType, roll, isWinner, isSelf =
                     C_LootHistory.GetPlayerInfo(itemIndex, playerIndex)
@@ -85,4 +88,4 @@ function impl.HideBlizzardRollFrames(isActive)
     closeFrames()
 end
 
-app.api:Implement("classic", impl)
+internal.api:Implement("classic", impl)

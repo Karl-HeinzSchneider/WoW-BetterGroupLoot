@@ -1,17 +1,19 @@
----@type string, BetterGroupLoot
-local appName, app = ...
+local lib = LibStub("BetterGroupLoot-1.0")
+local internal = lib.internal
+if not internal.loading then
+    return
+end
+
+-- The standard leveled chat logger. lib:CreateLogger(name) makes one tagged with the name;
+-- `log("msg")` is `log:info("msg")`, `log:debug("Looted %s x%d", link, count)` formats,
+-- `log:chat(...)` is unfiltered user-facing output, `log:dump(tbl)` prints a table at DEBUG.
+-- A host supplying its own logger to Start needs `debug`, `error` and `chat` with format args.
 
 ---@class BetterGroupLoot.Logger
 ---@operator call(...): nil
+---@field prefix string
+---@field threshold BetterGroupLoot.LogLevel
 local logger = {}
-app.logger = logger
-
--- Allow `log("msg")` as shorthand for `log:info("msg")`.
-setmetatable(logger, {
-    __call = function(self, ...)
-        self:info(...)
-    end,
-})
 
 ---@alias BetterGroupLoot.LogLevel integer
 
@@ -40,11 +42,6 @@ local levelColors = {
     [logger.level.DEBUG] = "aaaaaa",
     [logger.level.SILLY] = "777777",
 }
-
-local PREFIX = "|cff33ccff" .. appName .. "|r"
-
--- Until OnInitialize applies profile.logLevel (default in db.lua).
-logger.threshold = logger.level.INFO
 
 -- Accepts a numeric level or a level name ("DEBUG", case-insensitive). Returns nil if invalid.
 local function resolveLevel(level)
@@ -96,7 +93,7 @@ function logger:print(level, fmt, ...)
     end
 
     local color = levelColors[level] or "ffffff"
-    print(("%s |cff%s[%s]|r %s"):format(PREFIX, color, levelNames[level], msg))
+    print(("%s |cff%s[%s]|r %s"):format(self.prefix, color, levelNames[level], msg))
 end
 
 -- Level shortcuts: logger:info("Looted %s x%d", link, count)
@@ -122,7 +119,7 @@ end
 -- Plain user-facing chat output, never filtered by level and without a level tag.
 function logger:chat(fmt, ...)
     local msg = select("#", ...) > 0 and tostring(fmt):format(...) or tostring(fmt)
-    print(PREFIX .. ": " .. msg)
+    print(self.prefix .. ": " .. msg)
 end
 
 -- Dump a table one level deep; useful for inspecting event payloads while debugging.
@@ -140,3 +137,23 @@ function logger:dump(tbl, label)
     end
     self:debug("}")
 end
+
+local metatable = {
+    __index = logger,
+    -- Allow `log("msg")` as shorthand for `log:info("msg")`.
+    __call = function(self, ...)
+        self:info(...)
+    end,
+}
+
+---@param name string shown in front of every message
+---@return BetterGroupLoot.Logger
+function lib:CreateLogger(name)
+    return setmetatable({
+        prefix = "|cff33ccff" .. tostring(name) .. "|r",
+        threshold = logger.level.INFO,
+    }, metatable)
+end
+
+-- Used until a host starts the library with its own logger.
+internal.logger = lib:CreateLogger("BetterGroupLoot")
