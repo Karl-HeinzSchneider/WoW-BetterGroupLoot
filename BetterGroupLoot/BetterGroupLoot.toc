@@ -9,22 +9,4 @@
 ## X-Website: https://github.com/Karl-HeinzSchneider/WoW-BetterGroupLoot
 ## X-Curse-Project-ID: 1382269
 
-embeds.xml
-
-src\core\logger.lua
-src\core\db.lua
-src\core\ace.lua
-src\core\options.lua
-
-src\api\api.lua
-src\api\common.lua
-src\api\classic.lua
-src\api\forever.lua
-
-src\rolls\rollframe.lua
-src\rolls\frames.lua
-src\rolls\rolls.lua
-src\rolls\runtime.lua
-src\core\standalone.lua
-
-BetterGroupLoot.lua
+standalone.xml

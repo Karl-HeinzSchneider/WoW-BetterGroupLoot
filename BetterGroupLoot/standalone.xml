@@ -1,0 +1,13 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <!-- Standalone dependencies and private Edit Mode library. -->
+    <Include file="embeds.xml" />
+    <Script file="lib\LibEditMode\namespaced.lua" />
+    <Include file="lib\LibEditMode\embed.xml" />
+    <Script file="src\core\logger.lua" />
+    <Script file="src\core\db.lua" />
+    <Script file="src\core\ace.lua" />
+    <Script file="src\core\options.lua" />
+    <Include file="embedded.xml" />
+    <Script file="src\core\standalone.lua" />
+    <Script file="BetterGroupLoot.lua" />
+</Ui>

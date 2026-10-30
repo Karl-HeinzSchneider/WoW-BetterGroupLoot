@@ -44,7 +44,8 @@ WoW addons are plain Lua/XML files loaded by the game; there is no build step. T
 Static checks also used ad hoc: `lua-language-server --check` (config in `.luarc.json`; `lib/` is
 excluded from LuaLS, StyLua and Prettier).
 
-`npm run check:compat` runs the offline client-adapter regressions in `tests/compat.lua`
+`npm run check:compat` runs the offline client-adapter regressions in `tests/compat.lua`, `tests/editmode.lua` (including the runtime fixture), and
+`tests/editmode-library.lua` and XML load-graph tests in `tests/entrypoints.lua`
 (Lua 5.1 on PATH); it is also included in `npm run check`. Tests never ship in the package.
 
 ## Tooling (`src/`)
@@ -148,3 +149,12 @@ Never list anything from these folders in a TOC or copy files out of them into t
   `PortraitFrameBaseTemplate` or `PagingControlsTemplate` is fine. Verify the file is loaded by
   this client before depending on it.
 - A screenshot the user shares is a look reference, not a template to reproduce pixel by pixel.
+
+## Standalone and embedded entry points
+
+This repository ships one addon folder. BetterGroupLoot.toc loads standalone.xml,
+which loads dependencies and the private LibEditMode, then the standalone core,
+embedded.xml's shared code, and standalone startup. Embedded hosts import only
+embedded.xml and provide their own libraries, logger and startup/registration.
+Edit Mode is a supported-client requirement; do not add capability probes or
+separate loader addons. Keep vendored LibEditMode revision 18 unmodified.

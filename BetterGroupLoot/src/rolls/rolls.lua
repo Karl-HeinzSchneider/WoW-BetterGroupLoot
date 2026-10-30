@@ -28,6 +28,7 @@ local PREVIEW_DURATION = 60000
 ---@class BetterGroupLoot.Rolls : AceEvent-3.0
 ---@field host table
 ---@field active boolean
+---@field editMode table? Optional Edit Mode registration retained across disable/enable
 ---@field anchor Frame
 ---@field mover Button
 ---@field pool table Object pool of private roll frames
@@ -67,6 +68,7 @@ function module:Start()
         return
     end
     self.active = true
+    self.anchor:Show()
     api.HideBlizzardRollFrames(function()
         return self.active
     end)
@@ -86,12 +88,20 @@ function module:Start()
     self:RegisterEvent("PLAYER_ENTERING_WORLD", "SyncActiveRolls")
 
     self:SyncActiveRolls()
+    if self.editMode then
+        self:RegisterEvent("PLAYER_REGEN_DISABLED", "RefreshEditMode")
+        self:RegisterEvent("PLAYER_REGEN_ENABLED", "RefreshEditMode")
+        self:RefreshEditMode()
+    end
 end
 
 -- The first OnProfileRefresh runs before OnInitialize, hence the guard.
 function module:OnProfileRefresh()
     if self.anchor then
         self:ApplySettings()
+        if self.editMode then
+            self:RefreshEditMode()
+        end
     end
 end
 
@@ -144,6 +154,11 @@ function module:ApplySettings()
     local profile = self:GetProfile()
     local scale = profile.scale
     self.anchor:SetScale(scale)
+    if self.editMode and self.editMode.followDefaultScale then
+        local default = self.editMode.defaultPosition
+        default.x = self.host.defaultPosition.x / scale
+        default.y = self.host.defaultPosition.y / scale
+    end
     self.anchor:ClearAllPoints()
     self.anchor:SetPoint("BOTTOM", UIParent, "BOTTOM", profile.position.x / scale, profile.position.y / scale)
     self:Layout()
@@ -330,12 +345,7 @@ function module:SetUnlocked(unlocked)
         return
     end
     self.unlocked = unlocked
-    self.mover:SetShown(unlocked)
-    if unlocked then
-        self:ShowPreviews()
-    else
-        self:HidePreviews()
-    end
+    self:RefreshPreviews()
     self:RefreshOptions()
 end
 
@@ -382,7 +392,28 @@ local function newPreview(index)
     return preview
 end
 
+-- Keep the legacy mover and Edit Mode previews from creating duplicate stacks.
+function module:RefreshPreviews()
+    local registration = self.editMode
+    local editing = registration and registration.library:IsInEditMode()
+    local allowed = self.active and not (registration and InCombatLockdown and InCombatLockdown())
+    self.mover:SetShown(allowed and self.unlocked and not editing)
+    if registration and not registration.managePreviews then
+        return
+    end
+    if allowed and (self.unlocked or editing) then
+        self:ShowPreviews()
+    else
+        self:HidePreviews()
+    end
+end
+
 function module:ShowPreviews()
+    for _, frame in ipairs(self.frames) do
+        if frame.preview then
+            return
+        end
+    end
     for index = 1, #PREVIEW_ITEMS do
         local preview = newPreview(index)
         local frame = self.pool:Acquire() --[[@as BetterGroupLootRollFrameMixin]]
@@ -421,6 +452,7 @@ function module:Stop()
     self:UnregisterAllEvents()
     self.unlocked = false
     self.mover:Hide()
+    self.anchor:Hide()
     for index = #self.frames, 1, -1 do
         self:RemoveFrame(self.frames[index])
     end

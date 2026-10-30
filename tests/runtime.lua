@@ -213,3 +213,6 @@ local blocked, failedOwner = copy(true).StartGroupLoot(nil)
 assert(blocked == nil and failedOwner.prefix == "FailedHost")
 assert(failedOwner.controller == nil)
 print("Startup validation and failed-start ownership checks passed")
+
+-- Also expose the isolated-copy fixture to the optional Edit Mode integration tests.
+return { copy = copy }

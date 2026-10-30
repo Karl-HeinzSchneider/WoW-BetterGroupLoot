@@ -14,6 +14,7 @@
 ---@field api BetterGroupLoot.Api  # the client's loot API behind one interface (src/api/)
 ---@field StartGroupLoot fun(host: table): BetterGroupLoot.Rolls?, table?
 ---@field runtimeOwner table?
+---@field LibEditMode table? Standalone private library
 ---@field rollStrings table<string, string>? Optional complete tooltip text supplied before loading rollframe.lua
 ---@field RollController BetterGroupLoot.Rolls
 ---@field RollButtonMixin table
