@@ -25,6 +25,7 @@ src\rolls\rollframe.lua
 src\rolls\frames.lua
 src\rolls\rolls.lua
 src\rolls\runtime.lua
+src\rolls\editmode.lua
 src\core\standalone.lua
 
 BetterGroupLoot.lua

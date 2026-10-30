@@ -13,6 +13,8 @@ who they are, and move the rolls anywhere on the screen.
   enabled) everyone who hasn't chosen yet.
 - Disenchant is offered when the client allows it; Transmog is available on Forever.
 - Your own instant Need roll's number is shown on Forever when the game rolls it.
+- Native Edit Mode integration on supported clients: select the roll stack to move it or adjust
+  scale, spacing, growth direction and undecided-player tooltips.
 - Move the rolls anywhere: unlock them, drag the anchor, lock them again. Scale, spacing and
   stacking direction are adjustable, and every setting is per profile.
 
@@ -23,10 +25,18 @@ continue to use the game's UI.
 
 ## Installation
 
-Download it from the GitHub releases and put the `BetterGroupLoot` folder into
+Download it from the GitHub releases and put the `BetterGroupLoot` and
+`BetterGroupLoot_EditMode` folders into
 `..\World of Warcraft\<client>\Interface\AddOns`.
 
+The Edit Mode companion loads on demand only when the client provides the required native
+Edit Mode APIs. Clients without them keep the existing unlock-and-drag controls.
+
 ## Usage
+
+Open the game's Edit Mode and select **BetterGroupLoot**. Three preview rolls show the stack's
+position and growth direction. Its settings menu uses the same per-profile settings as the
+addon options; switching native Edit Mode layouts does not create separate addon profiles.
 
 - `/bettergrouploot` — open the options (also in the game's Settings > AddOns)
 - `/bettergrouploot unlock` / `lock` — show the anchor with preview rolls to drag them into place

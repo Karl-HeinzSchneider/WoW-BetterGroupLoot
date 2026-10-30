@@ -11,7 +11,8 @@ numbers), and the stack of rolls can be dragged anywhere.
 
 Libraries, standalone core, client API contract/common/adapters, private roll mixins,
 frame factory, controller, runtime ownership entry point, standalone lifecycle adapter,
-then BetterGroupLoot.lua. Every Lua file must appear in the TOC.
+then BetterGroupLoot.lua. Every Lua file must appear in the TOC. The standalone
+adapter loads BetterGroupLoot_EditMode only when native Edit Mode APIs are ready.
 
 The reusable subset is `src/api/` and `src/rolls/`, in TOC order. These files do not
 create frames, register events or install overrides until `app.StartGroupLoot(host)`.
@@ -64,16 +65,18 @@ may call the game's loot API directly.
 
 ### `src/rolls/`
 
-- `rollframe.lua` � private `app.RollButtonMixin` and `app.RollFrameMixin`: choice
+- `rollframe.lua` - private `app.RollButtonMixin` and `app.RollFrameMixin`: choice
   counts/tooltips, real rolls, previews and item rendering. No global mixins.
-- `frames.lua` � `app.CreateRollFrame(parent, name)`, the original 277�67 layout and
+- `frames.lua` - `app.CreateRollFrame(parent, name)`, the original 277x67 layout and
   game art constructed in Lua, with private mixins and unnamed child frames.
-- `rolls.lua` � `app.RollController`: anchor, pooled frames, layout, roll events,
+- `rolls.lua` - `app.RollController`: anchor, pooled frames, layout, roll events,
   preview generation and optional legacy unlock mover. Settings use `host.getProfile()`.
-- `runtime.lua` � `app.StartGroupLoot(host)` checks the shared owner first, then
+- `editmode.lua` - optional `RegisterEditMode(lib, options)` registration and composable
+  `GetEditModeSettings(lib, options)` rows. Never looks up a global library.
+- `runtime.lua` - `app.StartGroupLoot(host)` checks the shared owner first, then
   creates/starts a controller. The first startup reserves ownership until reload;
   other copies return `nil, owner` without UI/events/hooks. Stop makes hooks inert.
-- `src/core/standalone.lua` � the standalone Rolls AceModule starts/stops the
+- `src/core/standalone.lua` - the standalone Rolls AceModule starts/stops the
   controller and forwards profile changes. Embedded hosts must not load this file.
 
 ### Annotations (not in the TOC)
@@ -99,6 +102,12 @@ may call the game's loot API directly.
 
 ## Regression tests
 
-`npm run check:compat` runs `tests/compat.lua` and `tests/runtime.lua` with Lua 5.1.
+`npm run check:compat` runs client, runtime (via the Edit Mode fixture), Edit Mode adapter
+and vendored-library smoke tests with Lua 5.1.
 Runtime tests cover independently loaded copies, both ownership orders, no startup
 side effects in the losing copy, private prefixed frames, pooling and profile changes.
+
+`BetterGroupLoot_EditMode/` is a load-on-demand companion with an unmodified copy of
+Seamless's namespaced LibEditMode revision 18. Do not patch vendored library files.
+Its own private table is passed to every vendored script; initialize.lua hands the
+resulting library to the standalone addon through SetEditModeLibrary.

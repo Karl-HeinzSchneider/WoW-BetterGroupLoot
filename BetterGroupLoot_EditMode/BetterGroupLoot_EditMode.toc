@@ -1,0 +1,22 @@
+## Interface: 16001, 11508, 11509, 20505, 20506, 50503, 50504
+## Title: BetterGroupLoot: Edit Mode
+## Notes: Optional standalone Edit Mode support for BetterGroupLoot.
+## Author: Karl-HeinzSchneider
+## Version: |cff8080ff@project-version@|r
+## Dependencies: BetterGroupLoot
+## LoadOnDemand: 1
+## X-License: MIT
+
+lib\LibEditMode\namespaced.lua
+lib\LibEditMode\LibEditMode.lua
+lib\LibEditMode\pools.lua
+lib\LibEditMode\widgets\button.lua
+lib\LibEditMode\widgets\checkbox.lua
+lib\LibEditMode\widgets\dialog.lua
+lib\LibEditMode\widgets\divider.lua
+lib\LibEditMode\widgets\dropdown.lua
+lib\LibEditMode\widgets\expander.lua
+lib\LibEditMode\widgets\extension.lua
+lib\LibEditMode\widgets\slider.lua
+lib\LibEditMode\widgets\colorpicker.lua
+initialize.lua

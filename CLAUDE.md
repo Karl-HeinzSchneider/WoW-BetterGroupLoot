@@ -44,7 +44,8 @@ WoW addons are plain Lua/XML files loaded by the game; there is no build step. T
 Static checks also used ad hoc: `lua-language-server --check` (config in `.luarc.json`; `lib/` is
 excluded from LuaLS, StyLua and Prettier).
 
-`npm run check:compat` runs the offline client-adapter regressions in `tests/compat.lua`
+`npm run check:compat` runs the offline client-adapter regressions in `tests/compat.lua`, `tests/editmode.lua` (including the runtime fixture), and
+`tests/editmode-library.lua`
 (Lua 5.1 on PATH); it is also included in `npm run check`. Tests never ship in the package.
 
 ## Tooling (`src/`)
@@ -148,3 +149,12 @@ Never list anything from these folders in a TOC or copy files out of them into t
   `PortraitFrameBaseTemplate` or `PagingControlsTemplate` is fine. Verify the file is loaded by
   this client before depending on it.
 - A screenshot the user shares is a look reference, not a template to reproduce pixel by pixel.
+
+## Optional standalone Edit Mode companion
+
+`BetterGroupLoot_EditMode/` is a load-on-demand addon depending on BetterGroupLoot.
+It contains the same private LibEditMode revision 18 used by Seamless, unmodified.
+Its library files are excluded from formatter/LuaLS checks. Main's standalone adapter
+loads it after checking native capabilities and winning runtime ownership. Embedded
+hosts use the optional shared registration methods with their own library instead.
+Keep both addon TOC version strings identical for local packaging.
