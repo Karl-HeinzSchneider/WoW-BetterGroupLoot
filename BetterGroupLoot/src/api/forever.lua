@@ -156,13 +156,16 @@ end
 -- then close each one right away through the same container function it uses itself, so its
 -- bookkeeping (waiting rolls, the bottom frame layout, alerts stacked above) stays consistent.
 local blizzardFramesHidden = false
-function impl.HideBlizzardRollFrames()
+function impl.HideBlizzardRollFrames(isActive)
     if blizzardFramesHidden or not GroupLootContainer_OpenNewFrame then
         return
     end
     blizzardFramesHidden = true
 
     hooksecurefunc("GroupLootContainer_OpenNewFrame", function(rollID)
+        if isActive and not isActive() then
+            return
+        end
         for i = 1, 4 do
             local frame = _G["GroupLootFrame" .. i]
             if frame and frame.rollID == rollID and frame:IsShown() then

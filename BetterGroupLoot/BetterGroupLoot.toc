@@ -22,7 +22,9 @@ src\api\classic.lua
 src\api\forever.lua
 
 src\rolls\rollframe.lua
-src\rolls\rollframe.xml
+src\rolls\frames.lua
 src\rolls\rolls.lua
+src\rolls\runtime.lua
+src\core\standalone.lua
 
 BetterGroupLoot.lua

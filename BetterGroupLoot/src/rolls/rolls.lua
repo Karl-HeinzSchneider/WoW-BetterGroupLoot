@@ -1,14 +1,13 @@
 ---@type string, BetterGroupLoot
-local appName, app = ...
+local _, app = ...
 
 local log = app.logger
-local addon = app.addon
 local api = app.api
 
 -- The roll frames: one per running roll, stacked on a movable anchor. Unlocking shows the anchor
 -- with a few preview rolls, so the frames can be dragged into place.
 
-local FRAME_WIDTH, FRAME_HEIGHT = 277, 67 -- BetterGroupLootRollFrameTemplate's size
+local FRAME_WIDTH, FRAME_HEIGHT = 277, 67
 local NEED_ROLL_RESULT_SECONDS = 5 -- how long the own Need roll's number stays up
 
 -- Preview rolls: a few well-known items and a made-up group.
@@ -26,33 +25,51 @@ local PREVIEW_PLAYERS = {
 }
 local PREVIEW_DURATION = 60000
 
----@class BetterGroupLoot.Rolls : AceModule, AceEvent-3.0
+---@class BetterGroupLoot.Rolls : AceEvent-3.0
+---@field host table
+---@field active boolean
 ---@field anchor Frame
 ---@field mover Button
----@field pool table CreateFramePool of BetterGroupLootRollFrameTemplate
+---@field pool table Object pool of private roll frames
 ---@field frames BetterGroupLootRollFrameMixin[] shown frames in stacking order: real rolls, then previews
 ---@field unlocked boolean
 local module = {}
-app.rolls = addon:NewModule("Rolls", module, "AceEvent-3.0") --[[@as BetterGroupLoot.Rolls]]
-
-function module:OnInitialize()
+-- The host calls this only after claiming ownership in StartGroupLoot.
+function module:Initialize(host)
+    self.host = host
     self.frames = {}
     self.unlocked = false
     self:CreateAnchor()
-    self.pool = CreateFramePool("Frame", self.anchor, "BetterGroupLootRollFrameTemplate", function(_, frame)
+    local count = 0
+    self.pool = CreateObjectPool(function()
+        count = count + 1
+        local frame = app.CreateRollFrame(self.anchor, host.prefix .. "RollFrame" .. count)
+        frame.controller = self
+        return frame
+    end, function(_, frame)
         frame:Reset()
     end)
     self:ApplySettings()
 end
 
-function module:OnEnable()
-    if not api:IsSupported() then
-        log:error("This client's loot API is not supported; the game's own roll frames stay in use.")
+function module:GetProfile()
+    return self.host.getProfile()
+end
+
+function module:RefreshOptions()
+    if self.host.changed then
+        self.host.changed()
+    end
+end
+
+function module:Start()
+    if self.active then
         return
     end
-    log:debug("Using the %s loot API", api.client)
-
-    api.HideBlizzardRollFrames()
+    self.active = true
+    api.HideBlizzardRollFrames(function()
+        return self.active
+    end)
 
     local events = api.events
     self:RegisterEvent(events.rollStarted, "OnRollStarted")
@@ -81,7 +98,7 @@ end
 -- Anchor and position -----------------------------------------------------------------------------
 
 function module:CreateAnchor()
-    local anchor = CreateFrame("Frame", "BetterGroupLootAnchor", UIParent)
+    local anchor = CreateFrame("Frame", self.host.prefix .. "Anchor", UIParent)
     anchor:SetSize(FRAME_WIDTH, FRAME_HEIGHT)
     anchor:SetFrameStrata("DIALOG")
     anchor:SetMovable(true)
@@ -102,7 +119,7 @@ function module:CreateAnchor()
 
     local label = mover:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     label:SetPoint("CENTER")
-    label:SetText(appName .. "\n|cffd0d0d0Drag to move, right-click to lock|r")
+    label:SetText(self.host.moverText or (self.host.prefix .. "\n|cffd0d0d0Drag to move, right-click to lock|r"))
 
     mover:SetScript("OnDragStart", function()
         anchor:StartMoving()
@@ -119,7 +136,12 @@ end
 
 -- Position, scale and stacking from the profile.
 function module:ApplySettings()
-    local profile = app.db.profile
+    if self.host.applyPosition then
+        self.host.applyPosition(self.anchor)
+        self:Layout()
+        return
+    end
+    local profile = self:GetProfile()
     local scale = profile.scale
     self.anchor:SetScale(scale)
     self.anchor:ClearAllPoints()
@@ -129,26 +151,38 @@ end
 
 -- Stores where the anchor was dragged to, as the profile's bottom-center offset in UIParent units.
 function module:SavePosition()
+    if self.host.savePosition then
+        self.host.savePosition(self.anchor)
+        self:ApplySettings()
+        self:RefreshOptions()
+        return
+    end
     local anchor = self.anchor
     local scale = anchor:GetScale()
-    local position = app.db.profile.position
+    local position = self:GetProfile().position
     position.x = math.floor(anchor:GetCenter() * scale - UIParent:GetWidth() / 2 + 0.5)
     position.y = math.floor(anchor:GetBottom() * scale + 0.5)
     self:ApplySettings()
-    app.options:Refresh()
+    self:RefreshOptions()
 end
 
 function module:ResetPosition()
-    local defaults = app.dbDefaults.profile.position
-    local position = app.db.profile.position
+    if self.host.resetPosition then
+        self.host.resetPosition(self.anchor)
+        self:ApplySettings()
+        self:RefreshOptions()
+        return
+    end
+    local defaults = self.host.defaultPosition
+    local position = self:GetProfile().position
     position.x = defaults.x
     position.y = defaults.y
     self:ApplySettings()
-    app.options:Refresh()
+    self:RefreshOptions()
 end
 
 function module:Layout()
-    local profile = app.db.profile
+    local profile = self:GetProfile()
     local step = FRAME_HEIGHT + profile.spacing
     for index, frame in ipairs(self.frames) do
         local offset = (index - 1) * step
@@ -285,6 +319,9 @@ end
 
 ---@param unlocked boolean
 function module:SetUnlocked(unlocked)
+    if not self.active then
+        return
+    end
     if unlocked and not api:IsSupported() then
         log:chat("This client's loot API is not supported.")
         return
@@ -299,7 +336,7 @@ function module:SetUnlocked(unlocked)
     else
         self:HidePreviews()
     end
-    app.options:Refresh()
+    self:RefreshOptions()
 end
 
 local function randomPreviewChoices()
@@ -376,3 +413,17 @@ function module:HidePreviews()
         end
     end
 end
+
+-- Secure post-hooks cannot be removed. Keep ownership for this UI session, but make
+-- hooks inert while stopped so Blizzard's frames work again. Restart reuses this instance.
+function module:Stop()
+    self.active = false
+    self:UnregisterAllEvents()
+    self.unlocked = false
+    self.mover:Hide()
+    for index = #self.frames, 1, -1 do
+        self:RemoveFrame(self.frames[index])
+    end
+end
+
+app.RollController = module

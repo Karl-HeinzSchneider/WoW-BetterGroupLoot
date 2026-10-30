@@ -90,8 +90,9 @@ repository secrets `CF_API_KEY`, `WAGO_API_TOKEN`, `WOWI_API_TOKEN` and the proj
   language server completion on `app.*`. When a file adds a member to `app`, add a matching
   `---@field` to `BetterGroupLoot/src/types.lua`.
 
-- The only sanctioned globals are the SavedVariables tables and XML-required mixins/frames, which
-  are prefixed `BetterGroupLoot…`.
+- The sanctioned globals are SavedVariables, host-prefixed public anchor/roll frames, and
+  `BetterGroupLootRuntimeOwner`, the cooperative singleton shared by embedded copies.
+  Frame mixins remain private; never replace an existing runtime owner.
 - Persistent state lives only in tables declared via `## SavedVariables`; they are populated after
   `ADDON_LOADED`, not at file-load time (AceDB `OnInitialize` is the first safe place).
 - Ace3 types (`AceAddon`, `AceDBObject-3.0`, `AceDB.Schema`, …) come from the `ketho.wow-api`

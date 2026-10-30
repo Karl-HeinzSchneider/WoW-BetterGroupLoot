@@ -53,7 +53,9 @@ function addon:OnSlashCommand(input)
     if cmd == "" or cmd == "options" then
         app.options:Open()
     elseif cmd == "unlock" or cmd == "lock" then
-        app.rolls:SetUnlocked(cmd == "unlock")
+        if app.rolls then
+            app.rolls:SetUnlocked(cmd == "unlock")
+        end
     elseif cmd == "loglevel" then
         if arg and log:setLevel(arg) then
             self.db.profile.logLevel = log:getLevelName()
