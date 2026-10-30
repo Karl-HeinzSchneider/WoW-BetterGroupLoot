@@ -1,10 +1,16 @@
 # Embedding BetterGroupLoot
 
-The standalone addon and embedded hosts use the same `src/api/` and `src/rolls/`
-files. Vendor those directories together at a pinned commit. No build or XML name
-substitution is required. Load them in the order shown in BetterGroupLoot.toc;
-exclude `src/core/standalone.lua` and all standalone database/options/bootstrap files.
-Supply the same private table to every shared file.
+The addon has two XML entry points inside its single `BetterGroupLoot/` folder:
+
+- `standalone.xml`: used by BetterGroupLoot.toc. Loads dependencies, the private
+  LibEditMode, standalone database/options, shared code and automatic startup.
+- `embedded.xml`: reusable client adapters, frame/controller code and optional
+  Edit Mode registration helpers. Loads no libraries or standalone bootstrap.
+
+Vendor the addon directory at a pinned commit and include its `embedded.xml` from
+an XML file in the host addon. Relative script paths resolve against the imported
+XML's directory. Supply the same host-private table to every imported shared file.
+Do not import standalone.xml in an embedded host.
 
 Before loading the API files, provide `app.logger` with `debug`, `error` and `chat`
 methods accepting format strings. Optionally provide `app.rollStrings` before loading
@@ -73,12 +79,11 @@ unchanged.
 
 ## Optional Edit Mode registration
 
-The standalone distribution includes `BetterGroupLoot_EditMode`, a load-on-demand
-companion containing the same namespaced LibEditMode revision 18 used by Seamless.
-Its vendored files are unmodified. The standalone adapter loads it only after it wins
-runtime ownership and the client's native Edit Mode APIs/templates are available.
-Missing/disabled companion addons or clients without these APIs retain unlock mode.
-Embedded hosts do not load this companion or the standalone lifecycle adapter.
+`standalone.xml` loads the same namespaced LibEditMode revision 18 used by Seamless
+from `lib/LibEditMode/`. Its vendored files are unmodified. Edit Mode is part of the
+supported client contract; standalone registration uses the library directly after
+winning runtime ownership. There is no capability-probing or addon-loading flow.
+Embedded hosts import `embedded.xml` and provide their own library when registering.
 
 With a compatible library supplied by the host, register one custom frame explicitly:
 

@@ -1,6 +1,6 @@
 {
   "runtime.version": "Lua 5.1",
   "workspace.checkThirdParty": false,
-  "workspace.ignoreDir": ["BetterGroupLoot/lib", "BetterGroupLoot_EditMode/lib", ".release"],
+  "workspace.ignoreDir": ["BetterGroupLoot/lib", ".release"],
   "diagnostics.globals": ["BetterGroupLootDB", "LibStub"]
 }

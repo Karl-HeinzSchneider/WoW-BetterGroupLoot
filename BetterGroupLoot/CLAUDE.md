@@ -9,13 +9,13 @@ numbers), and the stack of rolls can be dragged anywhere.
 
 ## Load order (`BetterGroupLoot.toc`)
 
-Libraries, standalone core, client API contract/common/adapters, private roll mixins,
-frame factory, controller, runtime ownership entry point, standalone lifecycle adapter,
-then BetterGroupLoot.lua. Every Lua file must appear in the TOC. The standalone
-adapter loads BetterGroupLoot_EditMode only when native Edit Mode APIs are ready.
+The TOC imports `standalone.xml`. It loads dependencies and the private Edit Mode
+library, core database/options, `embedded.xml`, standalone lifecycle and the final
+BetterGroupLoot.lua file. Every code file must appear in this XML load graph.
 
-The reusable subset is `src/api/` and `src/rolls/`, in TOC order. These files do not
-create frames, register events or install overrides until `app.StartGroupLoot(host)`.
+`embedded.xml` is the host-facing import: client API contract/common/adapters,
+private roll mixins, frame factory, controller, runtime ownership entry point and
+optional Edit Mode registration helpers. It loads no library or standalone code.
 See `docs/embedding.md` for the host contract and ownership limitations.
 
 ## Files
@@ -107,7 +107,7 @@ and vendored-library smoke tests with Lua 5.1.
 Runtime tests cover independently loaded copies, both ownership orders, no startup
 side effects in the losing copy, private prefixed frames, pooling and profile changes.
 
-`BetterGroupLoot_EditMode/` is a load-on-demand companion with an unmodified copy of
-Seamless's namespaced LibEditMode revision 18. Do not patch vendored library files.
-Its own private table is passed to every vendored script; initialize.lua hands the
-resulting library to the standalone addon through SetEditModeLibrary.
+`lib/LibEditMode/` is the same unmodified namespaced revision 18 used by Seamless.
+standalone.xml loads it into this addon's private table. Embedded hosts import
+embedded.xml instead and supply their own library. Edit Mode is assumed available
+on supported clients; standalone registration only defers while in combat.

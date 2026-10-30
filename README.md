@@ -25,12 +25,8 @@ continue to use the game's UI.
 
 ## Installation
 
-Download it from the GitHub releases and put the `BetterGroupLoot` and
-`BetterGroupLoot_EditMode` folders into
+Download it from the GitHub releases and put the `BetterGroupLoot` folder into
 `..\World of Warcraft\<client>\Interface\AddOns`.
-
-The Edit Mode companion loads on demand only when the client provides the required native
-Edit Mode APIs. Clients without them keep the existing unlock-and-drag controls.
 
 ## Usage
 

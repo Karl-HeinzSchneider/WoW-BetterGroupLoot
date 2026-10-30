@@ -173,12 +173,15 @@ assert(moved[1] == embedded.anchor and moved[2] == "Layout" and moved[5] == 4)
 assert(embedded:GetProfile().position.x == 600)
 embedded:Stop()
 
--- Standalone only loads its private companion when capability checks pass.
+-- Standalone always uses the private library loaded by standalone.xml.
 local standalone, addon = nil, {}
-local registerCount, loads, starts = 0, 0, 0
+local registerCount, starts, waits = 0, 0, 0
 function addon:NewModule(_, module)
     standalone = module
-    module.RegisterEvent = function() end
+    module.RegisterEvent = function(_, event, handler)
+        assert(event == "PLAYER_REGEN_ENABLED" and handler == "RegisterEditMode")
+        waits = waits + 1
+    end
     module.UnregisterAllEvents = function() end
 end
 local fakeController = {
@@ -193,6 +196,7 @@ local fakeController = {
 }
 local app = {
     addon = addon,
+    LibEditMode = lib,
     StartGroupLoot = function()
         starts = starts + 1
         fakeController.active = true
@@ -200,46 +204,22 @@ local app = {
     end,
     dbDefaults = { profile = { position = {} } },
     db = { profile = {} },
-    logger = { debug = function() end, chat = function() end },
+    logger = { chat = function() end },
 }
 assert(loadfile("BetterGroupLoot/src/core/standalone.lua"))("BetterGroupLoot", app)
-C_EditMode, EditModeManagerFrame, EditModeSystemSettingsDialog = nil, nil, nil
 standalone:OnEnable()
-assert(loads == 0 and starts == 1 and registerCount == 0)
-C_EditMode = { GetLayouts = function() end }
-Enum.EditModeSettingDisplayType = {}
-EditModeManagerFrame, EditModeSystemSettingsDialog, EventRegistry = {}, {}, {}
-CreateUnsecuredObjectPool = function() end
-C_AddOns = {
-    LoadAddOn = function(name)
-        assert(name == "BetterGroupLoot_EditMode")
-        loads = loads + 1
-        addon:SetEditModeLibrary(lib)
-        return true
-    end,
-}
+assert(starts == 1 and registerCount == 1)
+standalone:OnDisable()
 combat = true
-standalone:TryEditMode()
-assert(loads == 0)
+standalone:OnEnable()
+assert(registerCount == 1 and waits == 1)
 combat = false
-standalone:TryEditMode()
-assert(loads == 1 and registerCount == 1)
-standalone:OnDisable()
-standalone:OnEnable()
-assert(loads == 1 and registerCount == 2) -- No second library load.
-standalone:OnDisable()
-app.LibEditMode = nil
-C_AddOns.LoadAddOn = function()
-    loads = loads + 1
-    return nil, "DISABLED"
-end
-standalone:OnEnable()
-standalone:TryEditMode()
-assert(loads == 2 and fakeController.active) -- A missing companion keeps the runtime working.
+standalone:RegisterEditMode()
+assert(registerCount == 2)
 standalone:OnDisable()
 app.StartGroupLoot = function()
     return nil, { prefix = "OtherHost" }
 end
 standalone:OnEnable()
-assert(loads == 2) -- The losing runtime never even loads standalone Edit Mode.
-print("Optional Edit Mode settings, previews, movement, lifecycle and standalone loading passed")
+assert(registerCount == 2) -- A losing runtime never registers the frame.
+print("Optional Edit Mode settings, previews, movement, lifecycle and standalone registration passed")

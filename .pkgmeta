@@ -17,7 +17,6 @@ package-as: BetterGroupLoot
 
 move-folders:
   BetterGroupLoot/BetterGroupLoot: BetterGroupLoot
-  BetterGroupLoot/BetterGroupLoot_EditMode: BetterGroupLoot_EditMode
 
 ignore:
   # Root tooling (the root src/ would also collide with BetterGroupLoot/src/ when the addon is moved).

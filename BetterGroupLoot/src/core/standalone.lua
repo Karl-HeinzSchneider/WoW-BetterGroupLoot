@@ -1,64 +1,27 @@
 ---@type string, BetterGroupLoot
 local appName, app = ...
 
--- Only the standalone TOC loads this adapter. Embedded hosts choose their own
--- library and call controller:RegisterEditMode explicitly, or register the anchor themselves.
+-- standalone.xml supplies the private library. Embedded hosts supply their own
+-- library and explicitly register the controller, or register its anchor themselves.
 local module = {}
 app.addon:NewModule("Rolls", module, "AceEvent-3.0")
 
-function app.addon:SetEditModeLibrary(lib)
-    app.LibEditMode = lib
-end
-
-function module:TryEditMode()
-    if not app.rolls or not app.rolls.active or self.loadingEditMode then
+function module:RegisterEditMode()
+    if not app.rolls or not app.rolls.active then
         return
     end
-    if InCombatLockdown and InCombatLockdown() then
+    if InCombatLockdown() then
+        self:RegisterEvent("PLAYER_REGEN_ENABLED", "RegisterEditMode")
         return
     end
-    if not app.LibEditMode then
-        -- LibEditMode requires the native templates and manager. Never load its
-        -- implementation on clients without those APIs; unlock mode remains usable.
-        if
-            not (
-                C_EditMode
-                and C_EditMode.GetLayouts
-                and Enum
-                and Enum.EditModeSettingDisplayType
-                and EditModeManagerFrame
-                and EditModeSystemSettingsDialog
-                and EventRegistry
-                and CreateUnsecuredObjectPool
-                and C_AddOns
-                and C_AddOns.LoadAddOn
-            )
-        then
-            return
-        end
-        if self.attemptedEditMode then
-            return
-        end
-        self.attemptedEditMode = true
-        self.loadingEditMode = true
-        local loaded, reason = C_AddOns.LoadAddOn("BetterGroupLoot_EditMode")
-        self.loadingEditMode = false
-        if not loaded then
-            app.logger:debug("Edit Mode support could not be loaded: %s", tostring(reason))
-            return
-        end
-    end
-    if app.LibEditMode then
-        app.rolls:RegisterEditMode(app.LibEditMode, {
-            name = appName,
-            defaults = app.dbDefaults.profile,
-        })
-        self:UnregisterAllEvents()
-    end
+    app.rolls:RegisterEditMode(app.LibEditMode, {
+        name = appName,
+        defaults = app.dbDefaults.profile,
+    })
+    self:UnregisterAllEvents()
 end
 
 function module:OnEnable()
-    self.attemptedEditMode = false
     local controller, owner = app.StartGroupLoot({
         prefix = appName,
         getProfile = function()
@@ -74,12 +37,7 @@ function module:OnEnable()
         app.logger:chat("Group loot was not started (%s).", owner.prefix or owner.reason)
         return
     end
-    -- Retry when Blizzard loads its UI or combat ends. No Edit Mode capability
-    -- is required by the standalone runtime or its older-client unlock fallback.
-    self:RegisterEvent("PLAYER_LOGIN", "TryEditMode")
-    self:RegisterEvent("ADDON_LOADED", "TryEditMode")
-    self:RegisterEvent("PLAYER_REGEN_ENABLED", "TryEditMode")
-    self:TryEditMode()
+    self:RegisterEditMode()
 end
 
 function module:OnDisable()
