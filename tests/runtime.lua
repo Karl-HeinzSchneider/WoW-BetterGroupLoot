@@ -10,6 +10,16 @@ local function region(parent, name)
                     return self.parent
                 end
             end
+            if key == "SetFrameStrata" then
+                return function(self, strata)
+                    self.strata = strata
+                end
+            end
+            if key == "GetFrameStrata" then
+                return function(self)
+                    return self.strata or (self.parent and self.parent:GetFrameStrata()) or "MEDIUM"
+                end
+            end
             if key == "GetFrameLevel" then
                 return function()
                     return 1

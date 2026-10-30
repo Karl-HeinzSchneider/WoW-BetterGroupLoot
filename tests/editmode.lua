@@ -48,10 +48,30 @@ local function newController(prefix)
 end
 
 local function library()
-    local lib = { SettingType = { Slider = 1, Checkbox = 2 }, callbacks = {}, registered = 0, refreshes = 0 }
+    local lib = {
+        SettingType = { Slider = 1, Checkbox = 2 },
+        callbacks = {},
+        frameSelections = {},
+        registered = 0,
+        refreshes = 0,
+    }
     function lib:AddFrame(frame, moved, default, name)
         self.registered = self.registered + 1
         self.frame, self.moved, self.default, self.name = frame, moved, default, name
+        -- Native EditModeSystemSelectionBaseTemplate explicitly chooses MEDIUM,
+        -- rather than inheriting the parent's strata, and uses frame level 1000.
+        self.frameSelections[frame] = {
+            strata = "MEDIUM",
+            SetFrameStrata = function(self, value)
+                self.strata = value
+            end,
+            GetFrameStrata = function(self)
+                return self.strata
+            end,
+            GetFrameLevel = function()
+                return 1000
+            end,
+        }
     end
     function lib:AddFrameSettings(frame, settings)
         assert(frame == self.frame)
@@ -109,6 +129,15 @@ assert(controller:GetProfile().spacing == 5)
 controller:AddRoll(42, 1000)
 lib:Enter()
 assert(#controller.frames == 4 and controller.frames[1].rollID == 42)
+-- The visible selection must win mouse hit testing over the DIALOG loot buttons.
+local selection = lib.frameSelections[controller.anchor]
+local button = controller.frames[1].NeedButton
+local strataRank = { MEDIUM = 1, DIALOG = 2 }
+local function above(a, b)
+    local aRank, bRank = strataRank[a:GetFrameStrata()], strataRank[b:GetFrameStrata()]
+    return aRank > bRank or (aRank == bRank and a:GetFrameLevel() > b:GetFrameLevel())
+end
+assert(above(selection, button), "Loot buttons cover the Edit Mode selection")
 lib.callbacks.layout()
 assert(#controller.frames == 4) -- No duplicate preview stack.
 controller:SetUnlocked(true)

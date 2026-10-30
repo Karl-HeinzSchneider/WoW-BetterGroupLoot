@@ -115,6 +115,10 @@ function controller:RegisterEditMode(lib, options)
             self:SavePosition()
         end
     end, default, options.name or self.host.prefix)
+    -- The native selection template explicitly uses MEDIUM. Our rolls inherit
+    -- DIALOG from the anchor, so match their strata to keep the selection's high
+    -- frame level above the roll buttons for mouse selection and dragging.
+    lib.frameSelections[self.anchor]:SetFrameStrata(self.anchor:GetFrameStrata())
     lib:AddFrameSettings(self.anchor, settings)
     if options.buttons then
         lib:AddFrameSettingsButtons(self.anchor, options.buttons)
