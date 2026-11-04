@@ -1,4 +1,4 @@
-## Interface: 16001, 11508, 11509, 20505, 20506, 50503, 50504
+## Interface: 16001, 11509, 20506, 50504
 ## Title: BetterGroupLoot
 ## Notes: Better group loot rolls: see how many players chose Need, Greed, Disenchant, Transmog or Pass, who they are, and move the rolls anywhere. |n|cffbbbbbbBy Karl-Heinz Schneider|r|n|n|TInterface/Addons/BetterGroupLoot/assets/core/coffee:12:12|t |cff82c5ffbuymeacoffee.com/karlheinzschneider|r
 ## IconTexture: Interface\Icons\INV_Misc_Dice_02

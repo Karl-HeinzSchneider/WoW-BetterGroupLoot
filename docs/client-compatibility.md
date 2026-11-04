@@ -6,9 +6,9 @@ and stores movable frame settings through AceDB. The UI consumes normalized data
 | Client                      | Interfaces declared | Loot history       | Choices                       |
 | --------------------------- | ------------------- | ------------------ | ----------------------------- |
 | Forever                     | 16001               | Encounter/drop API | Need, Greed, Transmog, Pass   |
-| Era, Hardcore, SoD          | 11508, 11509        | Roll-indexed API   | Need, Greed, Pass             |
-| Anniversary (TBC)           | 20505, 20506        | Roll-indexed API   | Need, Greed, Pass             |
-| Progression Classic (Mists) | 50503, 50504        | Roll-indexed API   | Need, Greed, Disenchant, Pass |
+| Era, Hardcore, SoD          | 11509               | Roll-indexed API   | Need, Greed, Pass             |
+| Anniversary (TBC)           | 20506               | Roll-indexed API   | Need, Greed, Pass             |
+| Progression Classic (Mists) | 50504               | Roll-indexed API   | Need, Greed, Disenchant, Pass |
 
 Buttons follow `GetLootRollItemInfo` permissions, so the client decides whether Disenchant is
 available. Retail has no declared interface and neither adapter selects it.
