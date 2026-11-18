@@ -4,12 +4,13 @@ if not internal.loading then
     return
 end
 
--- WoW Forever (1.6, a client of the retail family). Rolls work as on every client
+-- WoW Forever and Retail share the encounter-based loot history. Rolls work as on every client
 -- (START_LOOT_ROLL, GetLootRollItemInfo, RollOnLoot), but who chose what lives in the
 -- encounter-based loot history (C_LootHistory.GetSortedDropsForEncounter), which knows nothing
 -- about rollIDs; findDrop() pairs the two up.
 local _, _, _, interface = GetBuildInfo()
-if interface ~= 16001 or internal.api.client or not (C_LootHistory and C_LootHistory.GetSortedDropsForEncounter) then
+local client = interface == 16001 and "forever" or (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE and "retail")
+if not client or internal.api.client or not (C_LootHistory and C_LootHistory.GetSortedDropsForEncounter) then
     return
 end
 
@@ -85,7 +86,8 @@ local function findDrop(rollID)
     for _, encounter in ipairs(C_LootHistory.GetAllEncounterInfos() or {}) do
         local encounterID = encounter.encounterID
         for _, drop in ipairs(C_LootHistory.GetSortedDropsForEncounter(encounterID) or {}) do
-            if not claimed[encounterID .. ":" .. drop.lootListKey] then
+            local lootListKey = drop.lootListKey or drop.lootListID
+            if lootListKey and not claimed[encounterID .. ":" .. lootListKey] then
                 local score = 0
                 if drop.itemHyperlink == link then
                     score = 2
@@ -96,7 +98,7 @@ local function findDrop(rollID)
                     score = score + 2
                 end
                 if score > bestScore then
-                    best, bestScore = { encounterID = encounterID, lootListKey = drop.lootListKey }, score
+                    best, bestScore = { encounterID = encounterID, lootListKey = lootListKey }, score
                     if score == 4 then
                         return best
                     end
@@ -176,4 +178,4 @@ function impl.HideBlizzardRollFrames(isActive)
     end)
 end
 
-internal.api:Implement("forever", impl)
+internal.api:Implement(client, impl)

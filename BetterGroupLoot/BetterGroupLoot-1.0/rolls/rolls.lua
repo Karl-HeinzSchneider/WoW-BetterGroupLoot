@@ -373,10 +373,10 @@ function module:SetUnlocked(unlocked)
     self:RefreshOptions()
 end
 
-local function randomPreviewChoices()
+local function randomPreviewChoices(canTransmog)
     local choices = api.NewChoices()
     local picks = { "need", "greed", "pass", "undecided", "undecided" }
-    picks[#picks + 1] = api.client == "forever" and "transmog" or "disenchant"
+    picks[#picks + 1] = canTransmog and "transmog" or "disenchant"
     for _, player in ipairs(PREVIEW_PLAYERS) do
         local choice = picks[math.random(#picks)]
         table.insert(choices[choice], {
@@ -394,6 +394,7 @@ end
 ---@return BetterGroupLoot.Preview
 local function newPreview(index)
     local itemID = PREVIEW_ITEMS[index]
+    local supportsTransmog = api.client == "forever" or api.client == "retail"
     ---@type BetterGroupLoot.Preview
     local preview = {
         itemID = itemID,
@@ -406,10 +407,10 @@ local function newPreview(index)
             canNeed = true,
             canGreed = true,
             -- The second preview demonstrates the adapter's additional choice.
-            canTransmog = api.client == "forever" and index == 2,
+            canTransmog = supportsTransmog and index == 2,
             canDisenchant = api.client == "classic" and index == 2,
         },
-        choices = randomPreviewChoices(),
+        choices = randomPreviewChoices(supportsTransmog),
         duration = PREVIEW_DURATION,
         timeLeft = math.random(PREVIEW_DURATION),
     }

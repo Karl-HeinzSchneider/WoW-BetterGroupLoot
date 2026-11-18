@@ -135,35 +135,71 @@ for _, project in ipairs({ 2, 5, 19 }) do
 end
 equal(loadAddon(1, 120105, history):IsSupported(), false)
 equal(loadAddon(2, 11509, {}):IsSupported(), false)
-local encounterHistory = {
-    GetSortedDropsForEncounter = function()
-        return {}
+local encounterClients = {
+    { name = "forever", interface = 16001, dropKey = "lootListKey" },
+    { name = "retail", interface = 120105, dropKey = "lootListID" },
+    { name = "retail", interface = 120107, dropKey = "lootListKey" },
+}
+C_Loot = {
+    GetLootRollDuration = function()
+        return 60000
     end,
 }
-equal(loadAddon(1, 120105, encounterHistory):IsSupported(), false)
-local forever = loadAddon(1, 16001, encounterHistory)
-equal(forever.client, "forever")
-local active, hook, hookCount = true, nil, 0
-GroupLootContainer_OpenNewFrame = function() end
-hooksecurefunc = function(name, callback)
-    equal(name, "GroupLootContainer_OpenNewFrame")
-    hook, hookCount = callback, hookCount + 1
+for _, client in ipairs(encounterClients) do
+    local drops = {
+        {
+            [client.dropKey] = 1,
+            itemHyperlink = "item:123",
+            rollInfos = { { playerName = "Need", playerClass = "MAGE", state = 1, roll = 87 } },
+        },
+        {
+            [client.dropKey] = 2,
+            itemHyperlink = "item:123",
+            rollInfos = { { playerName = "Transmog", playerClass = "MAGE", state = 2, roll = 12 } },
+        },
+    }
+    local encounterHistory = {
+        GetAllEncounterInfos = function()
+            return { { encounterID = 42 } }
+        end,
+        GetSortedDropsForEncounter = function(encounterID)
+            equal(encounterID, 42)
+            return drops
+        end,
+        GetSortedInfoForDrop = function(encounterID, dropID)
+            equal(encounterID, 42)
+            return drops[dropID]
+        end,
+    }
+    local api = loadAddon(1, client.interface, encounterHistory)
+    equal(api.client, client.name)
+    equal(api.GetActiveRolls()[1].duration, 60000)
+    equal(api.GetRollChoices(10).need[1].offSpec, true)
+    equal(api.GetRollChoices(11).transmog[1].name, "Transmog")
+    equal(api.GetRollChoices(99), nil)
+
+    local active, hook, hookCount = true, nil, 0
+    GroupLootContainer_OpenNewFrame = function() end
+    hooksecurefunc = function(name, callback)
+        equal(name, "GroupLootContainer_OpenNewFrame")
+        hook, hookCount = callback, hookCount + 1
+    end
+    api.HideBlizzardRollFrames(function()
+        return active
+    end)
+    api.HideBlizzardRollFrames(function()
+        return active
+    end)
+    equal(hookCount, 1)
+    GroupLootFrame1.shown = true
+    hook(10)
+    equal(GroupLootFrame1.shown, false)
+    active = false
+    GroupLootFrame1.shown = true
+    hook(10)
+    equal(GroupLootFrame1.shown, true)
+    active = true
+    hook(10)
+    equal(GroupLootFrame1.shown, false)
 end
-forever.HideBlizzardRollFrames(function()
-    return active
-end)
-forever.HideBlizzardRollFrames(function()
-    return active
-end)
-equal(hookCount, 1)
-GroupLootFrame1.shown = true
-hook(10)
-equal(GroupLootFrame1.shown, false)
-active = false
-GroupLootFrame1.shown = true
-hook(10)
-equal(GroupLootFrame1.shown, true)
-active = true
-hook(10)
-equal(GroupLootFrame1.shown, false)
-print("Client compatibility checks passed (Era, Anniversary, Classic, Forever; retail excluded)")
+print("Client compatibility checks passed (Retail, Era, Anniversary, Classic, Forever)")

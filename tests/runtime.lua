@@ -192,8 +192,9 @@ assert(other == nil and owner.prefix == "SeamlessUIGroupLoot")
 assert(created == before and hooks == 1 and events == 4)
 -- A started library is never upgraded, by a copy of the same or a newer version.
 local internal = lib.internal
+local minor = lib.minor
 assert(library.load() == lib and lib.internal == internal and internal.loading == nil)
-assert(library.load({ minor = 99 }) == lib and lib.minor == 1 and lib.internal == internal)
+assert(library.load({ minor = minor + 1 }) == lib and lib.minor == minor and lib.internal == internal)
 assert(lib:Start(host("BetterGroupLoot")) == nil)
 -- The owner starting again is idempotent and never recreates the UI.
 assert(lib:Start(host("SeamlessUIGroupLoot")) == controller)
@@ -219,12 +220,12 @@ print("Runtime ownership, isolated frames, pooling, profiles and lifecycle passe
 
 -- Before any Start, a newer copy replaces the code; an older one stays out.
 lib = fresh(true)
-assert(library.load({ minor = 2 }) == lib and lib.minor == 2 and lib.internal.loading == nil)
+assert(library.load({ minor = minor + 1 }) == lib and lib.minor == minor + 1 and lib.internal.loading == nil)
 local upgraded = lib.internal
-assert(library.load() == lib and lib.minor == 2 and lib.internal == upgraded and upgraded.loading == nil)
+assert(library.load() == lib and lib.minor == minor + 1 and lib.internal == upgraded and upgraded.loading == nil)
 inject(lib, true)
 assert(lib:Start(host("Upgraded")).anchor.name == "UpgradedAnchor")
-assert(lib:GetOwner().minor == 2)
+assert(lib:GetOwner().minor == minor + 1)
 -- An older release that predates the library still owns the frames through the global.
 lib = fresh(true)
 BetterGroupLootRuntimeOwner = { prefix = "OldRelease", version = 1, reason = "owned" }
