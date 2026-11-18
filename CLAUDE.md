@@ -6,7 +6,7 @@ that apply everywhere; the addon folder has its own `CLAUDE.md` with its load or
 ## What this is
 
 BetterGroupLoot is a World of Warcraft addon (Lua 5.1 on top of Ace3) for the client set by the
-TOC's `## Interface` (Forever, Anniversary, Era and progression Classic; excluding retail), plus the Node/TypeScript tooling that checks,
+TOC's `## Interface` (Retail, Forever, Anniversary, Era and progression Classic), plus the Node/TypeScript tooling that checks,
 links and packages it.
 
 | Part               | What it is                                                                                                                          | Details                                                |

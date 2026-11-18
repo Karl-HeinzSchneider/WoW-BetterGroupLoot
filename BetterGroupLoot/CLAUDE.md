@@ -57,8 +57,8 @@ state through `lib.internal`, never through `...`.
 - `classic.lua` — Era, Anniversary and progression Classic. Resolves history by exact roll ID
   on each update, restores active rolls using remaining time, and post-hooks
   `GroupLootFrame_OpenNewFrame` to remove default frames. No instant Need or cancel-all event.
-- `forever.lua` — WoW Forever (1.6, retail family). Picks itself on interface 16001 when
-  `C_LootHistory.GetSortedDropsForEncounter` exists; retail stays unsupported. Rolls come from `START_LOOT_ROLL` /
+- `forever.lua` — WoW Forever (interface 16001) and Retail (mainline project). Selects either client
+  when `C_LootHistory.GetSortedDropsForEncounter` exists. Rolls come from `START_LOOT_ROLL` /
   `GetLootRollItemInfo`; who chose what comes from the encounter-based loot history, which has no
   rollID: `findDrop()` pairs a roll with a history drop by item link (then item ID), preferring
   open drops and skipping drops already paired with another roll. Rolls without a history entry

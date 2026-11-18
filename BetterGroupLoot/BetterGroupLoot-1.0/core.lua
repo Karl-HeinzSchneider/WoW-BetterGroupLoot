@@ -10,7 +10,7 @@
 --       return
 --   end
 -- and runtime.lua, the last file, clears `loading`.
-local MAJOR, MINOR = "BetterGroupLoot-1.0", 1
+local MAJOR, MINOR = "BetterGroupLoot-1.0", 2
 
 ---@class BetterGroupLoot.Lib
 ---@field internal BetterGroupLoot.Internal
